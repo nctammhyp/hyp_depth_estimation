@@ -1,0 +1,19 @@
+def visualize_depth_with_matplotlib(depth_resized, original_frame):
+    """
+    Visualize depth giống Cách 1 nhưng dùng colormap của Matplotlib (vd: plasma).
+    """
+    epsilon = 1e-6
+
+    # 1. Normalize depth về [0,1] để dùng matplotlib
+    depth_norm = (depth_resized - np.min(depth_resized)) / (np.max(depth_resized) - np.min(depth_resized) + epsilon)
+
+    # 2. Áp dụng colormap matplotlib (plasma)
+    depth_color = (plt.cm.plasma(depth_norm)[:, :, :3] * 255).astype(np.uint8)
+
+    # 3. Resize để hiển thị
+    depth_small = cv2.resize(depth_color, VISUALIZE_RESIZE)
+    frame_small = cv2.resize(original_frame, VISUALIZE_RESIZE)
+
+    # 4. Ghép ngang RGB + Depth
+    combined = cv2.hconcat([frame_small, depth_small])
+    return combined
