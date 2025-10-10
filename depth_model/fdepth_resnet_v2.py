@@ -11,7 +11,7 @@ import math,time
 # import resnet18
 from depth_model import resnet18
 
-import feature_fusion_module as ffm
+import depth_model.feature_fusion_module as ffm
 
 def ConvBlock(in_channels,out_channels,kernel_size,stride,padding):
   return nn.Sequential(
