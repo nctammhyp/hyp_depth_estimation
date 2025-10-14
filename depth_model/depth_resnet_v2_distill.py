@@ -148,8 +148,8 @@ class FastDepthV2(nn.Module):
     # print(f"fea 23: {x.size()}")
 
     x = self.decoder.output(x)          # output raw logits
-    x = torch.sigmoid(x) * self.max_depth  # scale về [0, max_depth]
-    # x = F.relu(x)
+    # x = torch.sigmoid(x) * self.max_depth  # scale về [0, max_depth]
+    x = F.relu(x)
 
     return x, student_feature_map
   

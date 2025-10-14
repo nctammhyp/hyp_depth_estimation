@@ -24,6 +24,9 @@ import torch.nn as nn
 from tqdm import tqdm
 from metric_depth.util.loss import SiLogLoss, DepthLoss, SiLogL1Loss
 
+
+from support.dataloader import nyuv2_dataloader_v2
+
 import glob
 import json
 
@@ -245,7 +248,9 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
             # Calculate the loss
             hidden_rep_loss = distill_loss(regressor_feature_map, teacher_feature_map)
 
-            mask = (labels > 1e-3) & (labels <= max_depth) & torch.isfinite(labels)
+            # mask = (labels > 1e-3) & (labels <= max_depth) & torch.isfinite(labels)
+            mask = (labels > 1e-3) & torch.isfinite(labels)
+
             # Calculate the true label loss
             label_loss = main_loss(student_logits, labels, mask)
 
@@ -398,7 +403,7 @@ def trainer():
     #     }
     # model_encoder = 'vitl'
 
-    device = "cpu"
+    device = "cuda:0"
 
     teacher_model = DepthAnythingV2(encoder='vitl', features=256, out_channels=[256, 512, 1024, 1024])
     teacher_model.load_state_dict(torch.load(r'depth_anything_v2\checkpoint\depth_anything_v2_vitl.pth', map_location='cpu'))
@@ -407,7 +412,8 @@ def trainer():
     student_model = FastDepthV2()
     print("Pretrained ImageNet weights đã được load thành công!")
 
-    train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
+    # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=64, size=(160, 128))
+    train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
     # Train and test once again
     train_mse_loss(teacher=teacher_model, student=student_model, train_loader=train_loader, val_loader=val_loader, epochs=10, learning_rate=0.001, feature_map_weight=0.25, ce_loss_weight=0.75, device=device)
