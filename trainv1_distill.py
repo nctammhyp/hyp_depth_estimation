@@ -213,7 +213,7 @@ def inference_sample(model, state_path, device, model_type="last"):
 
 def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_rate, feature_map_weight, ce_loss_weight, device):
 
-    state_path = ""
+    state_path = "/kaggle/working/hyp_depth_estimation/ours_checkpoints/16"
     distill_loss = nn.MSELoss()
     main_loss = SiLogLoss() # author's loss
 
@@ -287,7 +287,8 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
                 # print(depth)
 
 
-                mask = (depth > 1e-3) & (depth <= max_depth) & torch.isfinite(depth)
+                # mask = (depth > 1e-3) & (depth <= max_depth) & torch.isfinite(depth)
+                mask = (depth > 1e-3) & torch.isfinite(depth)
 
                 # print(mask)
 
