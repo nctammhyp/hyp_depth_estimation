@@ -169,8 +169,8 @@ def inference_sample(model, state_path, device, model_type="last"):
             gt_depth = np.load(label_path).astype(np.float32)
 
             # Resize về input size của model (160x128) 168, 126
-            rgb_resized = cv2.resize(rgb, (168, 126))
-            gt_resized = cv2.resize(gt_depth, (168, 126))
+            rgb_resized = cv2.resize(rgb, (224, 224))
+            gt_resized = cv2.resize(gt_depth, (224, 224))
 
             # Normalize GT depth để visualize
             gt_resized = (gt_resized - gt_resized.min()) / (gt_resized.max() - gt_resized.min() + epsilon)
