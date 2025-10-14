@@ -153,7 +153,7 @@ class DPTHead(nn.Module):
         teacher_feat = out
         # resize teacher để khớp spatial size
         teacher_resized = F.interpolate(teacher_feat, size=(112, 112), mode='bilinear', align_corners=False)
-        self.match_conv = nn.Conv2d(128, 64, kernel_size=1)
+        self.match_conv = nn.Conv2d(128, 64, kernel_size=1).to("cuda:0")
         teacher_feat_mapped = self.match_conv(teacher_resized)
 
         out = self.scratch.output_conv2(out)
