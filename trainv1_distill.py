@@ -257,6 +257,9 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
             # Calculate the true label loss
             label_loss = main_loss(student_logits, labels, mask)
 
+
+            print(f"distill loss: {hidden_rep_loss}, main loss: {label_loss}")
+
             # Weighted sum of the two losses
             loss = feature_map_weight * hidden_rep_loss + ce_loss_weight * label_loss
 
@@ -314,11 +317,11 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
             results[k] = round((results[k] / len(val_loader)).item(), 3)
 
         # ===== Save Checkpoint =====
-        torch.save({
-            "model": student.state_dict(),
-            "optim": optimizer.state_dict(),
-            # "scheduler": scheduler.state_dict()
-        }, f"{state_path}/last_checkpoint_{epoch}.pth")
+        # torch.save({
+        #     "model": student.state_dict(),
+        #     "optim": optimizer.state_dict(),
+        #     # "scheduler": scheduler.state_dict()
+        # }, f"{state_path}/last_checkpoint_{epoch}.pth")
 
         # if results['abs_rel'] < best_val_absrel:
         if results['silog'] < best_val:
@@ -326,13 +329,13 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
             best_val = results['silog']
             new_ckpt = f"{state_path}/checkpoint_best_{epoch}.pth"
 
-            # 1. Lưu checkpoint mới
-            # torch.save(model.state_dict(), new_ckpt)
-            torch.save({
-                "model": student.state_dict(),
-                "optim": optimizer.state_dict(),
-                # "scheduler": scheduler.state_dict()
-            }, new_ckpt)
+            # # 1. Lưu checkpoint mới
+            # # torch.save(model.state_dict(), new_ckpt)
+            # torch.save({
+            #     "model": student.state_dict(),
+            #     "optim": optimizer.state_dict(),
+            #     # "scheduler": scheduler.state_dict()
+            # }, new_ckpt)
 
             # 2. Xóa tất cả best checkpoint cũ (trừ file vừa lưu)
             for ckpt in glob.glob(f"{state_path}/checkpoint_best_*.pth"):
@@ -423,7 +426,7 @@ def trainer():
     train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
     # Train and test once again
-    train_mse_loss(teacher=teacher_model, student=student_model, train_loader=train_loader, val_loader=val_loader, epochs=10, learning_rate=0.001, feature_map_weight=0.25, ce_loss_weight=0.75, device=device)
+    train_mse_loss(teacher=teacher_model, student=student_model, train_loader=train_loader, val_loader=val_loader, epochs=10, learning_rate=0.0005, feature_map_weight=0.25, ce_loss_weight=0.75, device=device)
 
 if __name__ == "__main__":
     trainer()
