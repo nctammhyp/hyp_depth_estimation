@@ -251,7 +251,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
 
-    model = FastDepthV2(max_depth=max_depth).to(device)
+    model = FastDepthV2().to(device)
 
     optim = torch.optim.Adam(
           model.parameters(),  # lấy toàn bộ parameter của model
