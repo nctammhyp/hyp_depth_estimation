@@ -238,7 +238,7 @@ def inference_sample(model, state_path, device, model_type="last"):
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # params
-    num_epochs = 500
+    num_epochs = 5000
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 255

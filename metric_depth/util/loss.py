@@ -21,40 +21,44 @@ class SiLogLoss(nn.Module):
                           self.lambd * torch.pow(diff_log.mean(), 2))
 
         return loss
-    
 
-class SiLogL1Loss(nn.Module):
-    def __init__(self, silog_lambda=0.5, l1_weight=1, max_depth=600.0):
+class RelativeL1Loss(nn.Module):
+    def __init__(self, eps=1e-6):
         super().__init__()
-        self.silog_lambda = silog_lambda
-        self.l1_weight = l1_weight
-        self.max_depth = max_depth
+        self.eps = eps
 
-    def forward(self, pred, target, valid_mask):
-        pred = torch.clamp(pred, min=1e-6)
-        target = torch.clamp(target, min=1e-6)
-        valid_mask = valid_mask.detach()
+    def normalize_disparity(self, depth, mask):
+        """
+        depth: Tensor (H,W) hoặc (B,H,W)
+        mask: Boolean tensor same shape as depth
+        """
+        disp = torch.zeros_like(depth)
+        valid_disp = depth[mask]
+        disp[mask] = 1.0 / (valid_disp + self.eps)
 
-        pred_valid = pred[valid_mask]
-        target_valid = target[valid_mask]
+        # normalize disparity trên vùng hợp lệ
+        disp_valid = disp[mask]
+        min_disp = torch.quantile(disp_valid, 0.01)
+        max_disp = torch.quantile(disp_valid, 0.99)
+        disp[mask] = torch.clamp((disp[mask] - min_disp) / (max_disp - min_disp + self.eps), 0.0, 1.0)
+        return disp
 
-        # SILog
-        diff_log = torch.log(target_valid) - torch.log(pred_valid)
-        silog_loss = torch.sqrt(
-            torch.mean(diff_log ** 2) - self.silog_lambda * (torch.mean(diff_log) ** 2)
-        )
+    def forward(self, pred, target, mask):
+        """
+        pred, target: (B,H,W) hoặc (H,W)
+        mask: Boolean tensor same shape
+        """
+        valid_mask = mask & (target > 0)
+        if valid_mask.sum() == 0:
+            return torch.tensor(0.0, device=pred.device)
 
-        # L1 normalized
-        l1_loss = torch.mean(torch.abs(pred_valid - target_valid) / self.max_depth)
+        pred_n = self.normalize_disparity(pred, valid_mask)
+        target_n = self.normalize_disparity(target, valid_mask)
 
-        # Tổng hợp
-        total_loss = silog_loss + self.l1_weight * l1_loss
+        loss = torch.mean(torch.abs(pred_n[valid_mask] - target_n[valid_mask]))
+        return loss
 
-        # Trả tuple
-        return total_loss
-
-
-
+    
 class DepthLoss(nn.Module):
     def __init__(self):
         super(DepthLoss,self).__init__()
@@ -72,11 +76,31 @@ class DepthLoss(nn.Module):
             depth_loss = self.RMSLELoss(pred,target)
         if 'gn' in criterion:
             grad_target, grad_pred = self.imgrad_yx(target), self.imgrad_yx(pred)
-            grad_loss = self.GradLoss(grad_pred, grad_target) * self.grad_factor
+            grad_loss = self.GradLoss(grad_pred, grad_target)     * self.grad_factor
             normal_loss = self.NormLoss(grad_pred, grad_target) * self.normal_factor
             return depth_loss + grad_loss + normal_loss
         else:
             return depth_loss
+        
+        # ===== Relative L1 (disparity normalized) =====
+    def normalize_disparity(self, depth, eps=1e-6):
+        disp = 1.0 / (depth + eps)
+        disp = (disp - disp.min()) / (disp.max() - disp.min() + eps)
+        return disp
+
+    def L1_imp_Loss(self, pred, target):
+        # chỉ xét vùng hợp lệ
+        valid_mask = (target > 0).detach()
+        pred = pred[valid_mask]
+        target = target[valid_mask]
+
+        # normalize disparity trên từng ảnh
+        pred_n = self.normalize_disparity(pred)
+        target_n = self.normalize_disparity(target)
+
+        loss = torch.mean(torch.abs(pred_n - target_n))
+        return loss
+    # =============================================
     
     def GradLoss(self,grad_target,grad_pred):
         return torch.sum( torch.mean( torch.abs(grad_target-grad_pred) ) )
@@ -129,7 +153,7 @@ class DepthLoss(nn.Module):
         conv2.weight = nn.Parameter(weight)
         grad_y = conv2(img)
         return grad_y, grad_x
-
+    
 
 class ScaleInvariantGradientMatchingLoss(nn.Module):
     def __init__(self, scales=(1,2,4), loss_type='l1', eps=1e-6):

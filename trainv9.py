@@ -25,7 +25,7 @@ import torch.optim as optim
 
 
 import utils, loss_func
-from metric_depth.util.loss import SiLogLoss, DepthLoss, SiLogL1Loss
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
@@ -36,6 +36,8 @@ import json
 import glob
 
 import time
+from support.dataloader import nyuv2_dataloader_v2
+
 
 
 # args = utils.parse_args()
@@ -237,10 +239,10 @@ def inference_sample(model, state_path, device, model_type="last"):
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # params
-    num_epochs = 500
+    num_epochs = 5000
     warmup_epochs = 8
     num_cycles = 2
-    max_depth = 255
+    max_depth = 600
 
     print("CUDA available:", torch.cuda.is_available())
     print("CUDA device:", torch.cuda.current_device())
@@ -260,19 +262,22 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     decoder_params = model.decoder.parameters()
 
     optim = torch.optim.Adam([
-        {"params": backbone_params, "lr": 0.01},  # backbone LR nhỏ
-        {"params": decoder_params, "lr": 0.01}    # decoder LR lớn
+        {"params": backbone_params, "lr": 3e-4},  # backbone LR nhỏ
+        {"params": decoder_params, "lr": 3e-4}    # decoder LR lớn
     ], weight_decay=1e-5)
 
 
     print('Model created')
 
-    criterion = SiLogLoss() # author's loss
+    # criterion = SiLogLoss() # author's loss
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
+    criterion = RelativeL1Loss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
-    train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
+    # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
+    train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+
 
     print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
  
@@ -313,17 +318,19 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             optim.zero_grad()
             pred = model(img)
 
-            # loss = criterion('l1',pred,depth,epoch)
 
             # mask = (depth > 1e-3)
-            mask = (depth > 1e-3) & torch.isfinite(depth)
+            # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            # mask = (depth > 1e-3) & (depth <= max_depth) & torch.isfinite(depth)
+            mask = (depth > 0.00001) & (depth <= max_depth)
 
             # print("pred shape:", pred.shape)
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
-            loss = criterion(pred, depth, mask)
+
+            loss = criterion(pred,depth,mask)
+
+            # loss = criterion(pred, depth, mask)
 
             loss.backward()
             optim.step()
@@ -355,8 +362,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # print(depth)
 
 
-                # mask = (depth > 1e-3) & (depth <= max_depth) & torch.isfinite(depth)
-                mask = (depth > 1e-3) & torch.isfinite(depth)
+                mask = (depth > 0.00001) & (depth <= max_depth)
+                # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 
                 # print(mask)
@@ -381,12 +388,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         for k in results:
             results[k] = round((results[k] / len(val_loader)).item(), 3)
 
-        # ===== Save Checkpoint =====
-        torch.save({
-            "model": model.state_dict(),
-            "optim": optim.state_dict(),
-            # "scheduler": scheduler.state_dict()
-        }, f"{state_path}/last_checkpoint_{epoch}.pth")
+        # # ===== Save Checkpoint =====
+        # torch.save({
+        #     "model": model.state_dict(),
+        #     "optim": optim.state_dict(),
+        #     # "scheduler": scheduler.state_dict()
+        # }, f"{state_path}/last_checkpoint_{epoch}.pth")
 
         # if results['abs_rel'] < best_val_absrel:
         if results['silog'] < best_val:
@@ -394,13 +401,13 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             best_val = results['silog']
             new_ckpt = f"{state_path}/checkpoint_best_{epoch}.pth"
 
-            # 1. Lưu checkpoint mới
-            # torch.save(model.state_dict(), new_ckpt)
-            torch.save({
-                "model": model.state_dict(),
-                "optim": optim.state_dict(),
-                # "scheduler": scheduler.state_dict()
-            }, new_ckpt)
+            # # 1. Lưu checkpoint mới
+            # # torch.save(model.state_dict(), new_ckpt)
+            # torch.save({
+            #     "model": model.state_dict(),
+            #     "optim": optim.state_dict(),
+            #     # "scheduler": scheduler.state_dict()
+            # }, new_ckpt)
 
             # 2. Xóa tất cả best checkpoint cũ (trừ file vừa lưu)
             for ckpt in glob.glob(f"{state_path}/checkpoint_best_*.pth"):
@@ -411,10 +418,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                     os.remove(ckpt)
 
 
-            # inference cho best checkpoint
-            inference_sample(model, state_path, device, model_type="best")
+        #     # inference cho best checkpoint
+        #     inference_sample(model, state_path, device, model_type="best")
 
-        inference_sample(model, state_path, device, model_type="last")
+        # inference_sample(model, state_path, device, model_type="last")
 
 
         # Cập nhật history
