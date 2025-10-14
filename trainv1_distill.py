@@ -288,7 +288,7 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
 
 
                 # mask = (depth > 1e-3) & (depth <= max_depth) & torch.isfinite(depth)
-                mask = (depth > 1e-3) & torch.isfinite(depth)
+                mask = (depth > 1e-3)
 
                 # print(mask)
 
