@@ -258,10 +258,10 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
             label_loss = main_loss(student_logits, labels, mask)
 
 
-            print(f"distill loss: {hidden_rep_loss}, main loss: {label_loss}")
+            # print(f"distill loss: {hidden_rep_loss}, main loss: {label_loss}")
 
             # Weighted sum of the two losses
-            loss = feature_map_weight * hidden_rep_loss + ce_loss_weight * label_loss
+            loss = feature_map_weight * hidden_rep_loss +  label_loss
 
             loss.backward()
             optimizer.step()
@@ -426,7 +426,7 @@ def trainer():
     train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
     # Train and test once again
-    train_mse_loss(teacher=teacher_model, student=student_model, train_loader=train_loader, val_loader=val_loader, epochs=10, learning_rate=0.0005, feature_map_weight=0.25, ce_loss_weight=0.75, device=device)
+    train_mse_loss(teacher=teacher_model, student=student_model, train_loader=train_loader, val_loader=val_loader, epochs=10, learning_rate=0.0005, feature_map_weight=0.0025, ce_loss_weight=0.75, device=device)
 
 if __name__ == "__main__":
     trainer()
