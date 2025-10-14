@@ -410,6 +410,7 @@ def trainer():
 
     teacher_model = DepthAnythingV2(encoder='vitl', features=256, out_channels=[256, 512, 1024, 1024])
     teacher_model.load_state_dict(torch.load('/kaggle/working/depth_anything_v2_vitl.pth', map_location='cuda:0'))
+    teacher_model.to("cuda:0")
 
     # student
     student_model = FastDepthV2()
