@@ -295,9 +295,9 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
                 # valid_pixels = mask.sum().item()
                 # print(f"mask: {valid_pixels}")
 
-                # print("pred shape:", pred.shape)
-                # print("target shape:", target.shape)
-                # print("valid_mask shape:", mask.shape)
+                print("pred shape:", pred.shape)
+                print("target shape:", target.shape)
+                print("valid_mask shape:", mask.shape)
                 cur_results = eval_depth(pred[mask], depth[mask])
 
 
