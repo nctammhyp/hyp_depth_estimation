@@ -413,6 +413,7 @@ def trainer():
 
     # student
     student_model = FastDepthV2()
+    student_model.to("cuda:0")
     print("Pretrained ImageNet weights đã được load thành công!")
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=64, size=(160, 128))
