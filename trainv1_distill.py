@@ -218,6 +218,7 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
     main_loss = SiLogLoss() # author's loss
 
     max_depth = 255
+    best_val = 1e9
 
 
 
@@ -343,9 +344,9 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
 
 
             # inference cho best checkpoint
-            inference_sample(student, state_path, device, model_type="best")
+            # inference_sample(student, state_path, device, model_type="best")
 
-        inference_sample(student, state_path, device, model_type="last")
+        # inference_sample(student, state_path, device, model_type="last")
 
 
         # Cập nhật history
