@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
 # from depth_model.fdepth_resnet_v2 import FastDepthV2
-from depth_model.depth_mobile import FastDepthV2
+from depth_model.depth_mobile import FastDepthV2, weights_init
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -251,13 +251,21 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
 
-    model = FastDepthV2().to(device)
+    model = FastDepthV2()
+
+    model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    model.decoder.apply(weights_init)
+    
+    
+    model.to(device)
 
     optim = torch.optim.Adam(
           model.parameters(),  # lấy toàn bộ parameter của model
           lr=0.01,
           weight_decay=0.01
       )
+    
+
     
     # backbone_params = model.encoder.parameters()
     # decoder_params = model.decoder.parameters()
