@@ -44,7 +44,9 @@ def eval_depth(pred, target):
     target_safe = torch.clamp(target, min=eps)
 
     thresh = torch.max(target_safe / pred_safe, pred_safe / target_safe)
-    d1 = torch.sum(thresh < 1.25).float() / len(thresh)
+    # d1 = torch.sum(thresh < 1.25).float() / len(thresh)
+    d1 = torch.sum(thresh < 1.25).float() / thresh.numel()
+
 
     # thresh = torch.max(target_safe / pred_safe, pred_safe / target_safe)
     # d1 = (thresh < 1.25).float().mean()
