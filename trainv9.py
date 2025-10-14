@@ -17,7 +17,8 @@ import matplotlib.pyplot as plt
 
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
-from depth_model.fdepth_resnet_v2 import FastDepthV2
+# from depth_model.fdepth_resnet_v2 import FastDepthV2
+from depth_model.depth_mobile import FastDepthV2
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -252,19 +253,19 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     model = FastDepthV2(max_depth=max_depth).to(device)
 
-    # optim = torch.optim.Adam(
-    #       model.parameters(),  # lấy toàn bộ parameter của model
-    #       lr=3e-4,
-    #       weight_decay=0.01
-    #   )
+    optim = torch.optim.Adam(
+          model.parameters(),  # lấy toàn bộ parameter của model
+          lr=0.01,
+          weight_decay=0.01
+      )
     
-    backbone_params = model.encoder.parameters()
-    decoder_params = model.decoder.parameters()
+    # backbone_params = model.encoder.parameters()
+    # decoder_params = model.decoder.parameters()
 
-    optim = torch.optim.Adam([
-        {"params": backbone_params, "lr": 0.01},  # backbone LR nhỏ
-        {"params": decoder_params, "lr": 0.01}    # decoder LR lớn
-    ], weight_decay=1e-5)
+    # optim = torch.optim.Adam([
+    #     {"params": backbone_params, "lr": 0.01},  # backbone LR nhỏ
+    #     {"params": decoder_params, "lr": 0.01}    # decoder LR lớn
+    # ], weight_decay=1e-5)
 
 
     print('Model created')
@@ -303,10 +304,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # Chọn device
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    for name, param in model.named_parameters():
-        print(name, param.device)
+    # for name, param in model.named_parameters():
+    #     print(name, param.device)
 
-    print("------------------------------------------------------------------")
+    # print("------------------------------------------------------------------")
 
 
     for epoch in range(0, num_epochs):
