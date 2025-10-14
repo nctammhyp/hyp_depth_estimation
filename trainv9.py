@@ -262,8 +262,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     decoder_params = model.decoder.parameters()
 
     optim = torch.optim.Adam([
-        {"params": backbone_params, "lr": 3e-4},  # backbone LR nhỏ
-        {"params": decoder_params, "lr": 3e-4}    # decoder LR lớn
+        {"params": backbone_params, "lr": 0.01},  # backbone LR nhỏ
+        {"params": decoder_params, "lr": 0.01}    # decoder LR lớn
     ], weight_decay=1e-5)
 
 
@@ -320,10 +320,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             pred = model(img)
 
 
-            # mask = (depth > 1e-3)
+            mask = (depth > 1e-3)
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            mask = (depth > 0.00001) & (depth <= max_depth)
+            # mask = (depth > 1e-3) & (depth <= max_depth)
 
             # print("pred shape:", pred.shape)
             # print("target shape:", target.shape)
@@ -357,13 +357,13 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # test_loss += criterion('l1',pred, depth).item()
                 # pred = pred.squeeze(1).squeeze(0)
 
-                # mask = (depth >= 0.001)
+                mask = (depth >= 0.001)
                 # cur_results = eval_depth(pred, depth)
 
                 # print(depth)
 
 
-                mask = (depth > 0.00001) & (depth <= max_depth)
+                # mask = (depth > 1e-3) & (depth <= max_depth)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 
