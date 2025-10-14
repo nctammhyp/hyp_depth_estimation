@@ -58,6 +58,23 @@ class RelativeL1Loss(nn.Module):
         loss = torch.mean(torch.abs(pred_n[valid_mask] - target_n[valid_mask]))
         return loss
 
+
+class L1Loss(nn.Module):
+    def __init__(self, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred, target, mask):
+        """
+        pred, target: (B,H,W) hoặc (H,W)
+        mask: Boolean tensor same shape
+        """
+        valid_mask = mask.detach()
+        diff = target - pred
+        diff = diff[valid_mask]
+        self.loss = diff.abs().mean()
+        return self.loss
+
     
 class DepthLoss(nn.Module):
     def __init__(self):
