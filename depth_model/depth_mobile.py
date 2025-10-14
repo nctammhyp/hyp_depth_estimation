@@ -294,7 +294,7 @@ class FastDepthV2(nn.Module):
     self.decoder = NNConv5_DecoderV2(kernel_size)
   def forward(self,x):
     # print(f"######## {x.size()}")
-    x = x.permute(0, 3, 1, 2).contiguous()
+    # x = x.permute(0, 3, 1, 2).contiguous()
 
     x=self.encoder.enc_layer0(x)
     x=self.encoder.enc_layer1(x)
