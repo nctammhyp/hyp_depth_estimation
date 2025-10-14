@@ -276,7 +276,7 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
             for i , (input,target) in tqdm(enumerate(val_loader)):
                 img, depth = input.to(device), target.to(device)
 
-                pred = student(img)
+                pred, _ = student(img)
 
                 # test_loss += criterion('l1',pred, depth).item()
                 # pred = pred.squeeze(1).squeeze(0)
@@ -295,9 +295,9 @@ def train_mse_loss(teacher, student, train_loader, val_loader, epochs, learning_
                 # valid_pixels = mask.sum().item()
                 # print(f"mask: {valid_pixels}")
 
-                print("pred shape:", pred.shape)
-                print("target shape:", target.shape)
-                print("valid_mask shape:", mask.shape)
+                # print("pred shape:", pred.shape)
+                # print("target shape:", target.shape)
+                # print("valid_mask shape:", mask.shape)
                 cur_results = eval_depth(pred[mask], depth[mask])
 
 
