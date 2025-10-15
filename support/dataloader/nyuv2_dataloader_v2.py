@@ -111,7 +111,7 @@ def create_data_loaders(subset=False):
 
     # args.train_set = train_dataset
     train_loader = DataLoader(
-        train_dataset, batch_size=16, shuffle=True,
+        train_dataset, batch_size=8, shuffle=True,
         num_workers=4, pin_memory=True,
         worker_init_fn=lambda work_id: np.random.seed(work_id)
     )
