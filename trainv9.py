@@ -332,7 +332,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
         train_loader, val_loader = combined_train_loader, val_loader_v1
     else:
-        train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+        # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+        train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(160, 128))
 
 
 
