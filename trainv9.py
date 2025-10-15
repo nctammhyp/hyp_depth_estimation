@@ -37,9 +37,19 @@ import json
 import glob
 
 import time
-from support.dataloader import nyuv2_dataloader_v2
+
+from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3
+from torch.utils.data import ConcatDataset, DataLoader
 
 
+import torch
+import gc
+
+# 1. Xóa cache
+torch.cuda.empty_cache()
+
+# 2. Xóa các object không dùng nữa
+gc.collect()
 
 # args = utils.parse_args()
 # ensure deterministic behavior
@@ -51,7 +61,7 @@ torch.cuda.manual_seed_all(42)
 
 
 
-def eval_depth(pred, target):
+def eval_depth(pred, target, criterion):
     eps = 1e-6  # tránh chia 0, log 0
     assert pred.shape == target.shape
 
@@ -82,12 +92,15 @@ def eval_depth(pred, target):
         torch.mean(diff_log ** 2) - 0.5 * (torch.mean(diff_log) ** 2)
     )
 
+    mask = (target >= 1e-3)
+    loss = criterion(pred, target, mask)
+
     return {
         'd1': d1.detach(),
         'abs_rel': abs_rel.detach(),
         'rmse': rmse.detach(),
         'mae': mae.detach(),
-        'silog': silog.detach()
+        'loss': loss.detach()
     }
 
 
@@ -112,41 +125,24 @@ def inference_sample(model, state_path, device, model_type="last"):
         device: torch.device
         model_type: "last" (checkpoint mới nhất) hoặc "best" (checkpoint tốt nhất)
     """
-    # =========================
-    # 1. Load checkpoint
-    # =========================
+
     if model_type == "last":
-        # Load checkpoint mới nhất
-        ckpts = glob.glob(os.path.join(state_path, "last_checkpoint_*.pth"))
-        if len(ckpts) == 0:
-            raise FileNotFoundError("No last_checkpoint_*.pth found in the state_path!")
-
-        ckpts.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0].split("_")[-1]))
-        latest_ckpt = ckpts[-1]
-
-        checkpoint = torch.load(latest_ckpt, map_location=device)
-        print(f"[INFO] Loaded latest checkpoint: {latest_ckpt}")
-
+        ckpt_path = os.path.join(state_path, "last_checkpoint.pth")
     elif model_type == "best":
-        # Load best checkpoint
-        ckpts = glob.glob(os.path.join(state_path, "checkpoint_best_*.pth"))
-        if len(ckpts) == 0:
-            raise FileNotFoundError("No checkpoint_best_*.pth found in the state_path!")
-
-        ckpts.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0].split("_")[-1]))
-        best_ckpt = ckpts[-1]
-
-        checkpoint = torch.load(best_ckpt, map_location=device)
-        print(f"[INFO] Loaded best checkpoint: {best_ckpt}")
-
+        ckpt_path = os.path.join(state_path, "best_checkpoint.pth")
     else:
         raise ValueError("model_type must be either 'last' or 'best'")
 
-    # Load weights vào model
-    model.load_state_dict(checkpoint["model"])
-    model = model.to(device)
-    model.eval()
+    if not os.path.exists(ckpt_path):
+        raise FileNotFoundError(f"Checkpoint file not found: {ckpt_path}")
+    
 
+    checkpoint = torch.load(ckpt_path, map_location=device)
+    model.load_state_dict(checkpoint["model"])
+    model.to(device)
+
+    model.eval()
+    
     # =========================
     # 2. Paths setup
     # =========================
@@ -297,7 +293,42 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
-    train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+    # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+    train_loader, val_loader = None, None
+
+    use_cross_dataset = True
+    if use_cross_dataset:
+        train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(160, 128))
+        train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(160, 128))
+        train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
+        train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(160, 128))
+
+        # Gom tất cả dataset lại (kể cả val)
+        datasets = [
+            train_loader_v1.dataset,
+            train_loader_v2.dataset,
+            train_loader_v3.dataset,
+            val_loader_v3.dataset,   # thêm val_loader_v3
+            train_loader_v4.dataset
+        ]
+
+        # Gộp chúng lại
+        combined_train_dataset = ConcatDataset(datasets)
+
+        # Tạo DataLoader chung
+        combined_train_loader = DataLoader(
+            combined_train_dataset,
+            batch_size=16,
+            shuffle=True,       # quan trọng để trộn toàn bộ data
+            num_workers=8,
+            pin_memory=True,
+            drop_last=True
+        )
+
+        train_loader, val_loader = combined_train_loader, val_loader_v1
+    else:
+        train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+
 
 
     print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
@@ -395,7 +426,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # print("pred shape:", pred.shape)
                 # print("target shape:", target.shape)
                 # print("valid_mask shape:", mask.shape)
-                cur_results = eval_depth(pred[mask], depth[mask])
+                cur_results = eval_depth(pred[mask], depth[mask], criterion)
 
 
                 for k in results:
@@ -409,34 +440,26 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         for k in results:
             results[k] = round((results[k] / len(val_loader)).item(), 3)
 
-        # # ===== Save Checkpoint =====
-        # torch.save({
-        #     "model": model.state_dict(),
-        #     "optim": optim.state_dict(),
-        #     # "scheduler": scheduler.state_dict()
-        # }, f"{state_path}/last_checkpoint_{epoch}.pth")
+        # ===== Save Checkpoint =====
+        torch.save({
+            "model": model.state_dict(),
+            "optim": optim.state_dict(),
+            # "scheduler": scheduler.state_dict()
+        }, f"{state_path}/last_checkpoint.pth")
 
         # if results['abs_rel'] < best_val_absrel:
-        if results['silog'] < best_val:
+        if results['loss'] < best_val:
 
-            best_val = results['silog']
-            new_ckpt = f"{state_path}/checkpoint_best_{epoch}.pth"
+            best_val = results['loss']
+            new_ckpt = f"{state_path}/checkpoint_best.pth"
 
-            # # 1. Lưu checkpoint mới
-            # # torch.save(model.state_dict(), new_ckpt)
-            # torch.save({
-            #     "model": model.state_dict(),
-            #     "optim": optim.state_dict(),
-            #     # "scheduler": scheduler.state_dict()
-            # }, new_ckpt)
-
-            # 2. Xóa tất cả best checkpoint cũ (trừ file vừa lưu)
-            for ckpt in glob.glob(f"{state_path}/checkpoint_best_*.pth"):
-                print(ckpt)
-                print(new_ckpt)
-                print("--------------")
-                if ckpt != new_ckpt:
-                    os.remove(ckpt)
+            # 1. Lưu checkpoint mới
+            # torch.save(model.state_dict(), new_ckpt)
+            torch.save({
+                "model": model.state_dict(),
+                "optim": optim.state_dict(),
+                # "scheduler": scheduler.state_dict()
+            }, new_ckpt)
 
 
         #     # inference cho best checkpoint
@@ -460,7 +483,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # ==== Vẽ biểu đồ ====
         # epochs = range(1, num_epochs+1)
         epochs = range(1, len(history["train_loss"]) + 1)
-        loss_val = [m["silog"] for m in history["val_metrics"]]  # lấy metric silog từ val_metrics
+        loss_val = [m["loss"] for m in history["val_metrics"]]  # lấy metric silog từ val_metrics
 
         plt.figure(figsize=(8, 5))
 

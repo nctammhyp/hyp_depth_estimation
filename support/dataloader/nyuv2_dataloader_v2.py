@@ -24,7 +24,7 @@ def h5_loader(path):
 class NYUDataset(Dataset):
     def __init__(self, root_dir, train, loader=h5_loader):
         self.loader = loader
-        self.output_size = (224, 224)  # (H, W)
+        self.output_size = (128, 160)  # (H, W)
         self.root_dir = root_dir
         self.train = train
 
@@ -74,29 +74,31 @@ class NYUDataset(Dataset):
         return classes, class_to_idx
 
     def transform(self, rgb, depth):
-        # Step 1: Resize before augment
+        # Step 1: Resize
         resized = self.resize(image=rgb, mask=depth)
         rgb_resized = resized["image"]
         depth_resized = resized["mask"]
 
-        # Step 2: Apply augmentation only on RGB (not on depth)
+        # Step 2: Augmentation (chỉ RGB)
         if self.train:
             rgb_aug = self.augs(image=rgb_resized)["image"]
         else:
             rgb_aug = rgb_resized
 
-        # Step 3: Convert to Tensor
-        to_tensor = transforms.ToTensor()
-        rgb_tensor = to_tensor(rgb_aug)
-        depth_tensor = to_tensor(depth_resized)
+        # ✅ Step 3: Chia 255 trực tiếp
+        rgb_aug = rgb_aug.astype(np.float32) / 255.0
+
+        # ✅ Step 4: Chuyển sang tensor
+        rgb_tensor = torch.from_numpy(rgb_aug).permute(2, 0, 1).contiguous()  # [C,H,W]
+        depth_tensor = torch.from_numpy(depth_resized.astype(np.float32)).unsqueeze(0)  # [1,H,W]
 
         return rgb_tensor, depth_tensor
 
 
-def create_data_loaders(subset=False):
+def create_data_loaders(batch_size=16, subset=False):
     print("Creating dataset... patience.")
-    # base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
-    base_dir = "/kaggle/working/nyuv2/content/nyuv2/nyuv2_partial_406"
+    base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
+    # base_dir = "/kaggle/working/nyuv2/content/nyuv2/nyuv2_partial_406"
 
     train_path = os.path.join(base_dir, "train")
     val_path = os.path.join(base_dir, "val")
@@ -111,8 +113,8 @@ def create_data_loaders(subset=False):
 
     # args.train_set = train_dataset
     train_loader = DataLoader(
-        train_dataset, batch_size=4, shuffle=True,
-        num_workers=4, pin_memory=True,
+        train_dataset, batch_size=batch_size, shuffle=True,
+        num_workers=8, pin_memory=True,
         worker_init_fn=lambda work_id: np.random.seed(work_id)
     )
 
