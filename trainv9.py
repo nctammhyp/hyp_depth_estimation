@@ -293,7 +293,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
     train_loader, val_loader = None, None
 
-    use_cross_dataset = False
+    use_cross_dataset = True
     if use_cross_dataset:
         train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(160, 128))
         train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(160, 128))
@@ -521,4 +521,5 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
 if __name__ == "__main__":
-    train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
+    # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/16")
