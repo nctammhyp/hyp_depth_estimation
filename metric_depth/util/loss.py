@@ -265,7 +265,6 @@ class CombinedDepthLoss(nn.Module):
 import torch
 import torch.nn as nn
 
-
 class ScaleAndShiftInvariantLoss(nn.Module):
     def __init__(self, alpha=0.5, scales=4, reduction='batch'):
         """
@@ -280,10 +279,19 @@ class ScaleAndShiftInvariantLoss(nn.Module):
 
     def forward(self, pred, target, mask):
         """
-        pred: (B, H, W) predicted depth
-        target: (B, H, W) ground truth depth
-        mask: (B, H, W) valid mask
+        pred: (B, H, W) or (B,1,H,W) predicted depth
+        target: (B, H, W) or (B,1,H,W) ground truth depth
+        mask: (B, H, W) or (B,1,H,W) valid mask
         """
+
+        # ---------- auto-squeeze channel dimension if exists ----------
+        if pred.ndim == 4 and pred.shape[1] == 1:
+            pred = pred.squeeze(1)
+        if target.ndim == 4 and target.shape[1] == 1:
+            target = target.squeeze(1)
+        if mask.ndim == 4 and mask.shape[1] == 1:
+            mask = mask.squeeze(1)
+
         B, H, W = pred.shape
 
         # ---------- compute scale and shift ----------
@@ -319,9 +327,9 @@ class ScaleAndShiftInvariantLoss(nn.Module):
         for scale_idx in range(self.scales):
             step = 2 ** scale_idx
 
-            # downsample by step, safe slicing
+            # downsample by step, skip if too small
             if H // step < 2 or W // step < 2:
-                continue  # skip scales that are too small
+                continue
 
             p = pred_ssi[:, ::step, ::step]
             t = target[:, ::step, ::step]
@@ -329,7 +337,7 @@ class ScaleAndShiftInvariantLoss(nn.Module):
 
             diff = (p - t) * m
 
-            # only compute if diff has enough pixels
+            # compute gradient only if image has >1 pixel in each dim
             if diff.shape[1] > 1 and diff.shape[2] > 1:
                 grad_x = torch.abs(diff[:, :, 1:] - diff[:, :, :-1])
                 mask_x = m[:, :, 1:] * m[:, :, :-1]
