@@ -95,7 +95,7 @@ def get_image_label_pairs(directory, img_ext=".png", label_ext=".npy"):
 # ===================== Hàm tạo DataLoader =====================
 def create_data_loaders(data_root, batch_size=16, size=(160, 128)):
 
-    train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
+    train_paths = get_image_label_pairs(data_root)
 
     print(train_paths)
 
