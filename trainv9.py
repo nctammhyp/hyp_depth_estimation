@@ -401,7 +401,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # ===== Validation =====
         model.eval()
         # results = {'d1': 0, 'rmse': 0}
-        results = {'d1': 0, 'abs_rel': 0, 'rmse': 0, 'mae': 0, 'silog': 0}
+        results = {'d1': 0, 'abs_rel': 0, 'rmse': 0, 'mae': 0, 'loss': 0}
         # test_loss = 0
 
         with torch.no_grad():
