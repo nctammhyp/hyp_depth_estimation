@@ -265,8 +265,14 @@ class CombinedDepthLoss(nn.Module):
 import torch
 import torch.nn as nn
 
+
 class ScaleAndShiftInvariantLoss(nn.Module):
     def __init__(self, alpha=0.5, scales=4, reduction='batch'):
+        """
+        alpha: weight of gradient regularization
+        scales: number of multi-scale steps
+        reduction: 'batch' or 'image' based reduction
+        """
         super().__init__()
         self.alpha = alpha
         self.scales = scales
@@ -274,11 +280,13 @@ class ScaleAndShiftInvariantLoss(nn.Module):
 
     def forward(self, pred, target, mask):
         """
-        pred: (B, H, W)
-        target: (B, H, W)
-        mask: (B, H, W)
+        pred: (B, H, W) predicted depth
+        target: (B, H, W) ground truth depth
+        mask: (B, H, W) valid mask
         """
-        # ---------- Compute scale and shift ----------
+        B, H, W = pred.shape
+
+        # ---------- compute scale and shift ----------
         a_00 = torch.sum(mask * pred * pred, (1, 2))
         a_01 = torch.sum(mask * pred, (1, 2))
         a_11 = torch.sum(mask, (1, 2))
@@ -295,7 +303,7 @@ class ScaleAndShiftInvariantLoss(nn.Module):
 
         pred_ssi = scale.view(-1, 1, 1) * pred + shift.view(-1, 1, 1)
 
-        # ---------- Data loss (MSE) ----------
+        # ---------- data loss (MSE) ----------
         res = pred_ssi - target
         mse_per_image = torch.sum(mask * res * res, (1, 2))
         M = torch.sum(mask, (1, 2))
@@ -306,23 +314,31 @@ class ScaleAndShiftInvariantLoss(nn.Module):
             valid_img = M > 0
             data_loss = torch.mean(mse_per_image[valid_img] / (2 * M[valid_img] + 1e-6))
 
-        # ---------- Gradient loss ----------
+        # ---------- gradient regularization ----------
         grad_loss_total = 0
         for scale_idx in range(self.scales):
             step = 2 ** scale_idx
+
+            # downsample by step, safe slicing
+            if H // step < 2 or W // step < 2:
+                continue  # skip scales that are too small
+
             p = pred_ssi[:, ::step, ::step]
             t = target[:, ::step, ::step]
             m = mask[:, ::step, ::step]
 
             diff = (p - t) * m
-            grad_x = torch.abs(diff[:, :, 1:] - diff[:, :, :-1])
-            mask_x = m[:, :, 1:] * m[:, :, :-1]
-            grad_y = torch.abs(diff[:, 1:, :] - diff[:, :-1, :])
-            mask_y = m[:, 1:, :] * m[:, :-1, :]
 
-            grad_loss = torch.sum(mask_x * grad_x, (1, 2)) + torch.sum(mask_y * grad_y, (1, 2))
-            grad_loss_total += torch.sum(grad_loss) / (torch.sum(M) + 1e-6)
+            # only compute if diff has enough pixels
+            if diff.shape[1] > 1 and diff.shape[2] > 1:
+                grad_x = torch.abs(diff[:, :, 1:] - diff[:, :, :-1])
+                mask_x = m[:, :, 1:] * m[:, :, :-1]
+
+                grad_y = torch.abs(diff[:, 1:, :] - diff[:, :-1, :])
+                mask_y = m[:, 1:, :] * m[:, :-1, :]
+
+                grad_loss = torch.sum(mask_x * grad_x, (1, 2)) + torch.sum(mask_y * grad_y, (1, 2))
+                grad_loss_total += torch.sum(grad_loss) / (torch.sum(M) + 1e-6)
 
         total_loss = data_loss + self.alpha * grad_loss_total
-
         return total_loss
