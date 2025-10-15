@@ -97,6 +97,8 @@ def create_data_loaders(data_root, batch_size=16, size=(160, 128)):
 
     train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
 
+    print(train_paths)
+
     random.shuffle(train_paths)
 
     train_dataset = DepthDataset(train_paths, mode="train", size=size)

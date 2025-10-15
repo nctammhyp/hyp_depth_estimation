@@ -142,7 +142,7 @@ def inference_sample(model, state_path, device, model_type="last"):
     model.to(device)
 
     model.eval()
-    
+
     # =========================
     # 2. Paths setup
     # =========================
@@ -266,9 +266,6 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
-
-
-
 
     
 
