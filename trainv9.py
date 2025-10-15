@@ -253,7 +253,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     model = FastDepthV2()
 
-    model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
     # model.decoder.apply(weights_init)
     
     
