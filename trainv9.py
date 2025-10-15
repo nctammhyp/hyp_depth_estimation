@@ -266,7 +266,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #   )
 
     # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
-    optim = torch.optim.Adam(model.parameters(), lr = 3e-4 ,weight_decay=1e-4)
+    optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
     
 
