@@ -300,6 +300,14 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
         train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(160, 128))
 
+        print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
+        print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
+        print(f"train_loader_v2: {len(train_loader_v2.dataset)} samples ({len(train_loader_v2)} batches)")
+        print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
+        print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
+        print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
+
+
         # Gom tất cả dataset lại (kể cả val)
         datasets = [
             train_loader_v1.dataset,
