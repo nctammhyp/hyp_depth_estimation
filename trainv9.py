@@ -26,7 +26,7 @@ import torch.optim as optim
 
 
 import utils, loss_func
-from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, ScaleAndShiftInvariantLoss
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
@@ -283,7 +283,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     print('Model created')
 
     # criterion = SiLogLoss() # author's loss
-    criterion = ScaleAndShiftInvariantLoss()
+    criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()

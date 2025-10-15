@@ -262,91 +262,25 @@ class CombinedDepthLoss(nn.Module):
 
 
 
-import torch
-import torch.nn as nn
-
-class ScaleAndShiftInvariantLoss(nn.Module):
-    def __init__(self, alpha=0.5, scales=4, reduction='batch'):
-        """
-        alpha: weight of gradient regularization
-        scales: number of multi-scale steps
-        reduction: 'batch' or 'image' based reduction
-        """
+class CustomLoss(nn.Module):
+    def __init__(self, lambd=0.5, height=None, width=None):
         super().__init__()
-        self.alpha = alpha
-        self.scales = scales
-        self.reduction = reduction
+        self.lambd = lambd
+        self.height = height
+        self.width = width
 
-    def forward(self, pred, target, mask):
-        """
-        pred: (B, H, W) or (B,1,H,W) predicted depth
-        target: (B, H, W) or (B,1,H,W) ground truth depth
-        mask: (B, H, W) or (B,1,H,W) valid mask
-        """
-
-        # ---------- auto-squeeze channel dimension if exists ----------
-        if pred.ndim == 4 and pred.shape[1] == 1:
-            pred = pred.squeeze(1)
-        if target.ndim == 4 and target.shape[1] == 1:
-            target = target.squeeze(1)
-        if mask.ndim == 4 and mask.shape[1] == 1:
-            mask = mask.squeeze(1)
-
-        B, H, W = pred.shape
-
-        # ---------- compute scale and shift ----------
-        a_00 = torch.sum(mask * pred * pred, (1, 2))
-        a_01 = torch.sum(mask * pred, (1, 2))
-        a_11 = torch.sum(mask, (1, 2))
-        b_0 = torch.sum(mask * pred * target, (1, 2))
-        b_1 = torch.sum(mask * target, (1, 2))
-
-        det = a_00 * a_11 - a_01 * a_01
-        valid = det != 0
-
-        scale = torch.zeros_like(b_0)
-        shift = torch.zeros_like(b_1)
-        scale[valid] = (a_11[valid] * b_0[valid] - a_01[valid] * b_1[valid]) / det[valid]
-        shift[valid] = (-a_01[valid] * b_0[valid] + a_00[valid] * b_1[valid]) / det[valid]
-
-        pred_ssi = scale.view(-1, 1, 1) * pred + shift.view(-1, 1, 1)
-
-        # ---------- data loss (MSE) ----------
-        res = pred_ssi - target
-        mse_per_image = torch.sum(mask * res * res, (1, 2))
-        M = torch.sum(mask, (1, 2))
-
-        if self.reduction == 'batch':
-            data_loss = torch.sum(mse_per_image) / (2 * torch.sum(M) + 1e-6)
-        else:
-            valid_img = M > 0
-            data_loss = torch.mean(mse_per_image[valid_img] / (2 * M[valid_img] + 1e-6))
-
-        # ---------- gradient regularization ----------
-        grad_loss_total = 0
-        for scale_idx in range(self.scales):
-            step = 2 ** scale_idx
-
-            # downsample by step, skip if too small
-            if H // step < 2 or W // step < 2:
-                continue
-
-            p = pred_ssi[:, ::step, ::step]
-            t = target[:, ::step, ::step]
-            m = mask[:, ::step, ::step]
-
-            diff = (p - t) * m
-
-            # compute gradient only if image has >1 pixel in each dim
-            if diff.shape[1] > 1 and diff.shape[2] > 1:
-                grad_x = torch.abs(diff[:, :, 1:] - diff[:, :, :-1])
-                mask_x = m[:, :, 1:] * m[:, :, :-1]
-
-                grad_y = torch.abs(diff[:, 1:, :] - diff[:, :-1, :])
-                mask_y = m[:, 1:, :] * m[:, :-1, :]
-
-                grad_loss = torch.sum(mask_x * grad_x, (1, 2)) + torch.sum(mask_y * grad_y, (1, 2))
-                grad_loss_total += torch.sum(grad_loss) / (torch.sum(M) + 1e-6)
-
-        total_loss = data_loss + self.alpha * grad_loss_total
-        return total_loss
+    def forward(self, pred, target, valid_mask=None):
+        if valid_mask is not None:
+            pred = pred[valid_mask]
+            target = target[valid_mask]
+        
+        # tính hiệu: di = target - pred
+        di = target - pred
+        n = pred.numel() if (self.height is None or self.width is None) else (self.height * self.width)
+        
+        di2 = torch.pow(di, 2)
+        first_term = torch.sum(di2) / n
+        second_term = self.lambd * torch.pow(torch.sum(di), 2) / (n ** 2)
+        
+        loss = first_term - second_term
+        return loss
