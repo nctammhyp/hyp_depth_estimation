@@ -266,12 +266,27 @@ def inference_sample(model, state_path, device, model_type="last"):
         print(f"[INFO] Inference completed. Total processed images: {total_images}")
 
 
+def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
+    if epoch < 60:
+        lr = learning_rate
+    elif epoch < 120:
+        lr = learning_rate / 2   # 0.0025
+    elif epoch < 160:
+        lr = learning_rate / 4   # 0.00125
+    else:
+        lr = learning_rate / 8   # 0.000625
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # params
     num_epochs = 5000
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 600
+    learning_rate=0.005
+
+
 
     print("CUDA available:", torch.cuda.is_available())
     print("CUDA device:", torch.cuda.current_device())
@@ -300,20 +315,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     optim = torch.optim.ASGD(
         model.parameters(),
-        lr=0.01,            # max LR ban đầu
+        lr=0.005,            # max LR ban đầu
         lambd=0.0001,
         alpha=0.75,
         t0=1e6,
         weight_decay=0
     )
-
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optim,
-        T_0=40,        # 40 epoch / chu kỳ
-        T_mult=2,      # chu kỳ sau dài gấp đôi
-        eta_min=5e-4   # LR tối thiểu
-    )
-
 
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
@@ -422,6 +429,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
+        adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
@@ -446,10 +454,6 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             loss.backward()
             optim.step()
             # scheduler.step()
-
-            # step theo batch, với epoch + i/len(loader)
-            scheduler.step(epoch + i / len(train_loader))
-
 
             total_loss += loss.item()
 
@@ -543,7 +547,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             json.dump(history, f, indent=2)
 
 
-        print(f"epoch_{epoch}, train_loss={avg_loss:.5f}, val_metrics={results}, - LR: {scheduler.get_last_lr()[0]:.6f}")
+        print(f"epoch_{epoch}, train_loss={avg_loss:.5f}, val_metrics={results}, - LR = {optim.param_groups[0]['lr']:.6f}")
 
         # ==== Vẽ biểu đồ ====
         # epochs = range(1, num_epochs+1)
