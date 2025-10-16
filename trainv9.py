@@ -490,7 +490,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         if results['loss'] < best_val:
 
             best_val = results['loss']
-            new_ckpt = f"{state_path}/checkpoint_best.pth"
+            new_ckpt = f"{state_path}/best_checkpoint.pth"
 
             # 1. Lưu checkpoint mới
             # torch.save(model.state_dict(), new_ckpt)
