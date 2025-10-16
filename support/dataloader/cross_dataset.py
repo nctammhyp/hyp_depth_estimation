@@ -22,33 +22,39 @@ class DepthDataset(Dataset):
         return len(self.paths)
 
     def __getitem__(self, index):
-        rgb_path, depth_path = self.paths[index]
 
-        # Load RGB
-        rgb = cv2.imread(rgb_path)
-        if rgb is None:
-            raise FileNotFoundError(f"Không thể đọc ảnh: {rgb_path}")
-        rgb = rgb[:, :, ::-1]  # BGR -> RGB
+        try:
+            rgb_path, depth_path = self.paths[index]
 
-        # Load Depth
-        depth = np.load(depth_path).astype(np.float32)
+            # Load RGB
+            rgb = cv2.imread(rgb_path)
+            if rgb is None:
+                raise FileNotFoundError(f"Không thể đọc ảnh: {rgb_path}")
+            rgb = rgb[:, :, ::-1]  # BGR -> RGB
 
-        # Resize
-        rgb = cv2.resize(rgb, self.size)
-        depth = cv2.resize(depth, self.size)
+            # Load Depth
+            depth = np.load(depth_path).astype(np.float32)
 
-        # Augmentation
-        augmented = self.augs(image=rgb, mask=depth)
-        rgb, depth = augmented["image"], augmented["mask"]
+            # Resize
+            rgb = cv2.resize(rgb, self.size)
+            depth = cv2.resize(depth, self.size)
 
-        # Normalize
-        rgb = rgb / 255.0
+            # Augmentation
+            augmented = self.augs(image=rgb, mask=depth)
+            rgb, depth = augmented["image"], augmented["mask"]
 
-        # To Tensor
-        rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C,H,W]
-        depth = torch.from_numpy(depth).float().unsqueeze(0)   # [1,H,W]
+            # Normalize
+            rgb = rgb / 255.0
 
-        return rgb, depth
+            # To Tensor
+            rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C,H,W]
+            depth = torch.from_numpy(depth).float().unsqueeze(0)   # [1,H,W]
+
+            return rgb, depth
+        
+        except Exception as e:
+            print(f"[WARNING] Skip corrupted data: {rgb_path}, {depth_path}, error: {e}")
+            return None  # thử lại ảnh khác
 
 
 # ===================== Pairing Function =====================
@@ -77,6 +83,11 @@ def get_image_label_pairs(img_root, lbl_root, img_exts=(".png", ".jpg", ".jpeg")
 
     return pairs
 
+def collate_fn(batch):
+    batch = [b for b in batch if b is not None]
+    if len(batch) == 0:
+        return None
+    return torch.utils.data.default_collate(batch)
 
 # ===================== Create train loader =====================
 def create_loader(dataset_paths, batch_size=16, size=(160, 128)):
@@ -95,7 +106,7 @@ def create_loader(dataset_paths, batch_size=16, size=(160, 128)):
     train_set = DepthDataset(all_pairs, size=size)
     train_loader = DataLoader(train_set, batch_size=batch_size,
                               shuffle=True, num_workers=8,
-                              pin_memory=True, drop_last=True)
+                              pin_memory=True, drop_last=True, collate_fn=collate_fn)
     return train_loader
 
 

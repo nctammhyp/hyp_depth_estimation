@@ -167,7 +167,8 @@ def inference_sample(model, state_path, device, model_type="last"):
     if not os.path.exists(ckpt_path):
         print(f"Checkpoint file not found: {ckpt_path}")
     else:
-    
+        
+        print(f"*****      infer: {ckpt_path}    ******")
         checkpoint = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(checkpoint["model"])
         model.to(device)
@@ -295,7 +296,26 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
     # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
-    optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
+    # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
+
+    optimizer = torch.optim.ASGD(
+        model.parameters(),
+        lr=0.01,            # max LR ban đầu
+        lambd=0.0001,
+        alpha=0.75,
+        t0=1e6,
+        weight_decay=0
+    )
+
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer,
+        T_0=40,        # 40 epoch / chu kỳ
+        T_mult=2,      # chu kỳ sau dài gấp đôi
+        eta_min=5e-4   # LR tối thiểu
+    )
+
+
+
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
 
     
@@ -371,14 +391,16 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
  
     # best val monitor: loss silog
-    best_val = 1e9
+    best_val = 7092
     # best_loss = 1e9
     history = {"train_loss": [], "val_loss": [], "val_metrics": []}
 
     if load_state:
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/depth_v2/ours_checkpoints/11/last_checkpoint_16.pth", map_location=device)
+        print("----------   load checkpoint -------------")
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/depth_v2/ours_checkpoints/18/last_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/depth_v2/ours_checkpoints/18/last_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
-        optim.load_state_dict(checkpoint["optim"])
+        # optim.load_state_dict(checkpoint["optim"])
 
         # model.load_state_dict(checkpoint)
         model = model.to(device)
@@ -424,6 +446,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             loss.backward()
             optim.step()
             # scheduler.step()
+
+            # step theo batch, với epoch + i/len(loader)
+            scheduler.step(epoch + i / len(train_loader))
 
 
             total_loss += loss.item()
@@ -518,7 +543,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             json.dump(history, f, indent=2)
 
 
-        print(f"epoch_{epoch}, train_loss={avg_loss:.5f}, val_metrics={results}")
+        print(f"epoch_{epoch}, train_loss={avg_loss:.5f}, val_metrics={results}, - LR: {scheduler.get_last_lr()[0]:.6f}")
 
         # ==== Vẽ biểu đồ ====
         # epochs = range(1, num_epochs+1)
@@ -556,4 +581,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/18")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/19")

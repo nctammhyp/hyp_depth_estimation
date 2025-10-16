@@ -32,30 +32,34 @@ class DepthDataset(Dataset):
         return len(self.paths)
 
     def __getitem__(self, index):
-        rgb_path, depth_path = self.paths[index]
+        try:
+            rgb_path, depth_path = self.paths[index]
+            # Load RGB (BGR -> RGB)
+            rgb = cv2.imread(rgb_path)[:, :, ::-1]  
 
-        # Load RGB (BGR -> RGB)
-        rgb = cv2.imread(rgb_path)[:, :, ::-1]  
+            # Load Depth từ file .npy
+            depth = np.load(depth_path).astype(np.float32)  # <-- Đọc file npy
 
-        # Load Depth từ file .npy
-        depth = np.load(depth_path).astype(np.float32)  # <-- Đọc file npy
+            # Resize
+            rgb = cv2.resize(rgb, self.size)
+            depth = cv2.resize(depth, self.size)  # giữ nguyên giá trị float của depth
 
-        # Resize
-        rgb = cv2.resize(rgb, self.size)
-        depth = cv2.resize(depth, self.size)  # giữ nguyên giá trị float của depth
+            # Augment cho ảnh RGB và Depth
+            if self.mode == "train":
+                augmented = self.augs(image=rgb, mask=depth)
+                rgb, depth = augmented["image"] / 255.0, augmented["mask"]
+            else:
+                rgb, depth = rgb / 255.0, depth
 
-        # Augment cho ảnh RGB và Depth
-        if self.mode == "train":
-            augmented = self.augs(image=rgb, mask=depth)
-            rgb, depth = augmented["image"] / 255.0, augmented["mask"]
-        else:
-            rgb, depth = rgb / 255.0, depth
+            # Chuyển sang tensor
+            rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]
+            depth = torch.from_numpy(depth).float().unsqueeze(0)   # [1, H, W]
 
-        # Chuyển sang tensor
-        rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]
-        depth = torch.from_numpy(depth).float().unsqueeze(0)   # [1, H, W]
-
-        return rgb, depth
+            return rgb, depth
+        
+        except Exception as e:
+            print(f"[WARNING] Skip corrupted data: {rgb_path}, {depth_path}, error: {e}")
+            return None
 
 
 
@@ -92,6 +96,13 @@ def get_image_label_pairs(directory, img_ext=".png", label_ext=".npy"):
 
     return pairs
 
+def collate_fn(batch):
+    batch = [b for b in batch if b is not None]
+    if len(batch) == 0:
+        return None
+    return torch.utils.data.default_collate(batch)
+
+
 # ===================== Hàm tạo DataLoader =====================
 def create_data_loaders(data_root, batch_size=16, size=(160, 128)):
 
@@ -105,7 +116,7 @@ def create_data_loaders(data_root, batch_size=16, size=(160, 128)):
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
                               shuffle=True, num_workers=8,
-                              pin_memory=True, drop_last=True)
+                              pin_memory=True, drop_last=True, collate_fn=collate_fn)
 
     return train_loader
 

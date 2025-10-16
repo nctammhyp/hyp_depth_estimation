@@ -50,9 +50,16 @@ class NYUDataset(Dataset):
         return self.loader(path)
 
     def __getitem__(self, index):
-        rgb, depth = self.__getraw__(index)
-        rgb_tensor, depth_tensor = self.transform(rgb, depth)
-        return rgb_tensor, depth_tensor
+        try:
+
+            rgb, depth = self.__getraw__(index)
+            rgb_tensor, depth_tensor = self.transform(rgb, depth)
+            return rgb_tensor, depth_tensor
+        
+        except Exception as e:
+
+            print(f"[WARNING] Skip corrupted file nuyv2: error: {e}")
+            return None
 
     def build_dataset(self, root_dir, class_to_idx):
         images = []
@@ -94,6 +101,12 @@ class NYUDataset(Dataset):
 
         return rgb_tensor, depth_tensor
 
+def collate_fn(batch):
+    batch = [b for b in batch if b is not None]
+    if len(batch) == 0:
+        return None
+    return torch.utils.data.default_collate(batch)
+
 
 def create_data_loaders(batch_size=16, subset=False):
     print("Creating dataset... patience.")
@@ -115,11 +128,12 @@ def create_data_loaders(batch_size=16, subset=False):
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True,
         num_workers=8, pin_memory=True,
-        worker_init_fn=lambda work_id: np.random.seed(work_id)
+        worker_init_fn=lambda work_id: np.random.seed(work_id),
+        collate_fn=collate_fn
     )
 
     # args.val_set = val_dataset
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True, collate_fn=collate_fn)
 
     print("Finish loading datasets")
 
