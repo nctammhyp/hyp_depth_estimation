@@ -71,6 +71,27 @@ os.environ["NVIDIA_TF32_OVERRIDE"] = "1"              # ép TF32 khi FP32 comput
 os.environ["CUDNN_BENCHMARK"] = "1"                   # chọn kernel nhanh nhất
 os.environ["CUDNN_DETERMINISTIC"] = "0"               # cho phép non-deterministic kernel
 
+# ===============================
+# 2️⃣ PyTorch memory / DSA
+# ===============================
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512,garbage_collection_threshold:0.8"
+os.environ["TORCH_USE_CUDA_DSA"] = "1"                # bật dynamic shape allocation (PyTorch 2.x)
+
+# ===============================
+# 3️⃣ CPU / Thread / I/O
+# ===============================
+os.environ["OMP_NUM_THREADS"] = str(os.cpu_count())    # max CPU cores
+os.environ["UV_THREADPOOL_SIZE"] = "64"               # tăng threadpool cho async I/O
+
+# ===============================
+# 4️⃣ Torch runtime flags
+# ===============================
+torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.deterministic = False
+torch.set_float32_matmul_precision("high")           # bật TF32 trên Ada GPUs
+
+
+
 def eval_depth(pred, target, criterion):
     eps = 1e-6  # tránh chia 0, log 0
     assert pred.shape == target.shape
