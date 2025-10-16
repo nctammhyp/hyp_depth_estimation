@@ -59,36 +59,36 @@ np.random.seed(42)
 torch.manual_seed(42)
 torch.cuda.manual_seed_all(42)
 
-# ===============================
-# 1️⃣ CUDA / cuDNN / TensorCore
-# ===============================
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"          # đảm bảo mapping GPU ổn định
-os.environ["CUDA_LAUNCH_BLOCKING"] = "0"               # async kernel launch
-os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"      # tối ưu workspace kernel
-os.environ["CUBLAS_FORCE_TF32_TENSOR_OP_MATH"] = "1"  # bật TF32 TensorCore
-os.environ["NVIDIA_TF32_OVERRIDE"] = "1"              # ép TF32 khi FP32 compute
+# # ===============================
+# # 1️⃣ CUDA / cuDNN / TensorCore
+# # ===============================
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"          # đảm bảo mapping GPU ổn định
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "0"               # async kernel launch
+# os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"      # tối ưu workspace kernel
+# os.environ["CUBLAS_FORCE_TF32_TENSOR_OP_MATH"] = "1"  # bật TF32 TensorCore
+# os.environ["NVIDIA_TF32_OVERRIDE"] = "1"              # ép TF32 khi FP32 compute
 
-os.environ["CUDNN_BENCHMARK"] = "1"                   # chọn kernel nhanh nhất
-os.environ["CUDNN_DETERMINISTIC"] = "0"               # cho phép non-deterministic kernel
+# os.environ["CUDNN_BENCHMARK"] = "1"                   # chọn kernel nhanh nhất
+# os.environ["CUDNN_DETERMINISTIC"] = "0"               # cho phép non-deterministic kernel
 
-# ===============================
-# 2️⃣ PyTorch memory / DSA
-# ===============================
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512,garbage_collection_threshold:0.8"
-os.environ["TORCH_USE_CUDA_DSA"] = "1"                # bật dynamic shape allocation (PyTorch 2.x)
+# # ===============================
+# # 2️⃣ PyTorch memory / DSA
+# # ===============================
+# os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512,garbage_collection_threshold:0.8"
+# os.environ["TORCH_USE_CUDA_DSA"] = "1"                # bật dynamic shape allocation (PyTorch 2.x)
 
-# ===============================
-# 3️⃣ CPU / Thread / I/O
-# ===============================
-os.environ["OMP_NUM_THREADS"] = str(os.cpu_count())    # max CPU cores
-os.environ["UV_THREADPOOL_SIZE"] = "64"               # tăng threadpool cho async I/O
+# # ===============================
+# # 3️⃣ CPU / Thread / I/O
+# # ===============================
+# os.environ["OMP_NUM_THREADS"] = str(os.cpu_count())    # max CPU cores
+# os.environ["UV_THREADPOOL_SIZE"] = "64"               # tăng threadpool cho async I/O
 
-# ===============================
-# 4️⃣ Torch runtime flags
-# ===============================
-torch.backends.cudnn.benchmark = True
-torch.backends.cudnn.deterministic = False
-torch.set_float32_matmul_precision("high")           # bật TF32 trên Ada GPUs
+# # ===============================
+# # 4️⃣ Torch runtime flags
+# # ===============================
+# torch.backends.cudnn.benchmark = True
+# torch.backends.cudnn.deterministic = False
+# torch.set_float32_matmul_precision("high")           # bật TF32 trên Ada GPUs
 
 
 
