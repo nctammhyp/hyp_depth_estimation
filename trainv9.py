@@ -468,10 +468,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             }, new_ckpt)
 
 
-        #     # inference cho best checkpoint
-        #     inference_sample(model, state_path, device, model_type="best")
+            # inference cho best checkpoint
+            inference_sample(model, state_path, device, model_type="best")
 
-        # inference_sample(model, state_path, device, model_type="last")
+        inference_sample(model, state_path, device, model_type="last")
 
 
         # Cập nhật history
@@ -522,4 +522,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/17")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/18")
