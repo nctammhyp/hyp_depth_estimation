@@ -108,7 +108,7 @@ def create_loader(dataset_paths, batch_size=16, size=(160, 128)):
     train_set = DepthDataset(all_pairs, size=size)
     train_loader = DataLoader(train_set, batch_size=batch_size,
                               shuffle=True, num_workers=8,
-                              pin_memory=True, drop_last=True, collate_fn=collate_fn)
+                              pin_memory=True, drop_last=True)
     return train_loader
 
 

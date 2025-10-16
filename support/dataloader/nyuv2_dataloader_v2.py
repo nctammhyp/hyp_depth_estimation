@@ -129,12 +129,11 @@ def create_data_loaders(batch_size=16, subset=False):
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True,
         num_workers=8, pin_memory=True,
-        worker_init_fn=lambda work_id: np.random.seed(work_id),
-        collate_fn=collate_fn
+        worker_init_fn=lambda work_id: np.random.seed(work_id)
     )
 
     # args.val_set = val_dataset
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
 
     print("Finish loading datasets")
 

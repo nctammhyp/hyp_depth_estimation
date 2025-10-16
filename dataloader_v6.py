@@ -185,11 +185,11 @@ def create_data_loaders(data_root, batch_size=64, size=(160, 128)):
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
                               shuffle=True, num_workers=8,
-                              pin_memory=True, drop_last=True, collate_fn=collate_fn)
+                              pin_memory=True, drop_last=True)
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size,
                             shuffle=False, num_workers=8,
-                            pin_memory=True, collate_fn=collate_fn)
+                            pin_memory=True)
 
     return train_loader, val_loader
 
