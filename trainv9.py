@@ -59,7 +59,17 @@ np.random.seed(42)
 torch.manual_seed(42)
 torch.cuda.manual_seed_all(42)
 
+# ===============================
+# 1️⃣ CUDA / cuDNN / TensorCore
+# ===============================
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"          # đảm bảo mapping GPU ổn định
+os.environ["CUDA_LAUNCH_BLOCKING"] = "0"               # async kernel launch
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"      # tối ưu workspace kernel
+os.environ["CUBLAS_FORCE_TF32_TENSOR_OP_MATH"] = "1"  # bật TF32 TensorCore
+os.environ["NVIDIA_TF32_OVERRIDE"] = "1"              # ép TF32 khi FP32 compute
 
+os.environ["CUDNN_BENCHMARK"] = "1"                   # chọn kernel nhanh nhất
+os.environ["CUDNN_DETERMINISTIC"] = "0"               # cho phép non-deterministic kernel
 
 def eval_depth(pred, target, criterion):
     eps = 1e-6  # tránh chia 0, log 0
@@ -134,104 +144,104 @@ def inference_sample(model, state_path, device, model_type="last"):
         raise ValueError("model_type must be either 'last' or 'best'")
 
     if not os.path.exists(ckpt_path):
-        raise FileNotFoundError(f"Checkpoint file not found: {ckpt_path}")
+        print(f"Checkpoint file not found: {ckpt_path}")
+    else:
     
+        checkpoint = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(checkpoint["model"])
+        model.to(device)
 
-    checkpoint = torch.load(ckpt_path, map_location=device)
-    model.load_state_dict(checkpoint["model"])
-    model.to(device)
+        model.eval()
 
-    model.eval()
+        # =========================
+        # 2. Paths setup
+        # =========================
+        data_test = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1/test"
+        
+        save_test = "predict_sample"
+        os.makedirs(save_test, exist_ok=True)
 
-    # =========================
-    # 2. Paths setup
-    # =========================
-    data_test = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1/test"
-    
-    save_test = "predict_sample"
-    os.makedirs(save_test, exist_ok=True)
+        images_root = os.path.join(data_test, "images")
+        labels_root = os.path.join(data_test, "labels_npy")  # <-- Load từ thư mục chứa file .npy
 
-    images_root = os.path.join(data_test, "images")
-    labels_root = os.path.join(data_test, "labels_npy")  # <-- Load từ thư mục chứa file .npy
+        # Lấy danh sách tất cả scene
+        scene_list = sorted(os.listdir(images_root))
 
-    # Lấy danh sách tất cả scene
-    scene_list = sorted(os.listdir(images_root))
+        epsilon = 1e-8
+        total_images = 0
 
-    epsilon = 1e-8
-    total_images = 0
+        # =========================
+        # 3. Inference từng scene
+        # =========================
+        for scene_name in scene_list:
+            scene_img_dir = os.path.join(images_root, scene_name)
+            scene_label_dir = os.path.join(labels_root, scene_name)
 
-    # =========================
-    # 3. Inference từng scene
-    # =========================
-    for scene_name in scene_list:
-        scene_img_dir = os.path.join(images_root, scene_name)
-        scene_label_dir = os.path.join(labels_root, scene_name)
-
-        if not os.path.isdir(scene_img_dir):
-            continue
-
-        # Lấy danh sách file ảnh trong scene
-        image_paths = sorted(glob.glob(os.path.join(scene_img_dir, "*.png")))
-        print(f"[INFO] Scene {scene_name}: Found {len(image_paths)} images.")
-
-        for img_path in image_paths:
-            file_name = os.path.basename(img_path)
-            base_name = os.path.splitext(file_name)[0]
-
-            # Đường dẫn file .npy tương ứng
-            label_path = os.path.join(scene_label_dir, base_name + ".npy")
-
-            if not os.path.exists(label_path):
-                print(f"Warning: No GT .npy found for {file_name} in scene {scene_name}, skipping...")
+            if not os.path.isdir(scene_img_dir):
                 continue
 
-            # ----- Read RGB -----
-            rgb = cv2.imread(img_path)[:, :, ::-1]  # BGR -> RGB
+            # Lấy danh sách file ảnh trong scene
+            image_paths = sorted(glob.glob(os.path.join(scene_img_dir, "*.png")))
+            print(f"[INFO] Scene {scene_name}: Found {len(image_paths)} images.")
 
-            # ----- Load Depth từ file .npy -----
-            gt_depth = np.load(label_path).astype(np.float32)
+            for img_path in image_paths:
+                file_name = os.path.basename(img_path)
+                base_name = os.path.splitext(file_name)[0]
 
-            # Resize về input size của model (160x128)
-            rgb_resized = cv2.resize(rgb, (160, 128))
-            gt_resized = cv2.resize(gt_depth, (160, 128))
+                # Đường dẫn file .npy tương ứng
+                label_path = os.path.join(scene_label_dir, base_name + ".npy")
 
-            # Normalize GT depth để visualize
-            gt_resized = (gt_resized - gt_resized.min()) / (gt_resized.max() - gt_resized.min() + epsilon)
+                if not os.path.exists(label_path):
+                    print(f"Warning: No GT .npy found for {file_name} in scene {scene_name}, skipping...")
+                    continue
 
-            # ----- Chuẩn bị tensor -----
-            rgb_tensor = torch.from_numpy(rgb_resized / 255.0).float().permute(2, 0, 1).unsqueeze(0).to(device)
+                # ----- Read RGB -----
+                rgb = cv2.imread(img_path)[:, :, ::-1]  # BGR -> RGB
 
-            # ----- Model inference -----
-            with torch.no_grad():
-                pred_depth = model(rgb_tensor).cpu().squeeze(0).squeeze(0).numpy()
+                # ----- Load Depth từ file .npy -----
+                gt_depth = np.load(label_path).astype(np.float32)
 
-            # Normalize predicted depth để hiển thị
-            pred_depth = (pred_depth - pred_depth.min()) / (pred_depth.max() - pred_depth.min() + epsilon)
+                # Resize về input size của model (160x128)
+                rgb_resized = cv2.resize(rgb, (160, 128))
+                gt_resized = cv2.resize(gt_depth, (160, 128))
 
-            # =========================
-            # 4. Convert to color maps
-            # =========================
-            gt_colormap = (plt.cm.plasma(gt_resized)[:, :, :3] * 255).astype(np.uint8)
-            pred_colormap = (plt.cm.plasma(pred_depth)[:, :, :3] * 255).astype(np.uint8)
+                # Normalize GT depth để visualize
+                gt_resized = (gt_resized - gt_resized.min()) / (gt_resized.max() - gt_resized.min() + epsilon)
 
-            # Resize RGB gốc về cùng kích thước
-            rgb_show = cv2.resize(rgb, (160, 128))
+                # ----- Chuẩn bị tensor -----
+                rgb_tensor = torch.from_numpy(rgb_resized / 255.0).float().permute(2, 0, 1).unsqueeze(0).to(device)
 
-            # =========================
-            # 5. Horizontal concat
-            # =========================
-            concat_img = np.concatenate([rgb_show, gt_colormap, pred_colormap], axis=1)
+                # ----- Model inference -----
+                with torch.no_grad():
+                    pred_depth = model(rgb_tensor).cpu().squeeze(0).squeeze(0).numpy()
 
-            # =========================
-            # 6. Save result
-            # =========================
-            save_name = f"{scene_name}_{file_name}"  # thêm tiền tố scene
-            save_path = os.path.join(save_test, f"{model_type}_{save_name}")
-            cv2.imwrite(save_path, cv2.cvtColor(concat_img, cv2.COLOR_RGB2BGR))
+                # Normalize predicted depth để hiển thị
+                pred_depth = (pred_depth - pred_depth.min()) / (pred_depth.max() - pred_depth.min() + epsilon)
 
-            total_images += 1
+                # =========================
+                # 4. Convert to color maps
+                # =========================
+                gt_colormap = (plt.cm.plasma(gt_resized)[:, :, :3] * 255).astype(np.uint8)
+                pred_colormap = (plt.cm.plasma(pred_depth)[:, :, :3] * 255).astype(np.uint8)
 
-    print(f"[INFO] Inference completed. Total processed images: {total_images}")
+                # Resize RGB gốc về cùng kích thước
+                rgb_show = cv2.resize(rgb, (160, 128))
+
+                # =========================
+                # 5. Horizontal concat
+                # =========================
+                concat_img = np.concatenate([rgb_show, gt_colormap, pred_colormap], axis=1)
+
+                # =========================
+                # 6. Save result
+                # =========================
+                save_name = f"{scene_name}_{file_name}"  # thêm tiền tố scene
+                save_path = os.path.join(save_test, f"{model_type}_{save_name}")
+                cv2.imwrite(save_path, cv2.cvtColor(concat_img, cv2.COLOR_RGB2BGR))
+
+                total_images += 1
+
+        print(f"[INFO] Inference completed. Total processed images: {total_images}")
 
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
@@ -450,6 +460,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         torch.save({
             "model": model.state_dict(),
             "optim": optim.state_dict(),
+            "epoch": epoch
+
             # "scheduler": scheduler.state_dict()
         }, f"{state_path}/last_checkpoint.pth")
 
@@ -464,6 +476,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             torch.save({
                 "model": model.state_dict(),
                 "optim": optim.state_dict(),
+                "epoch": epoch
                 # "scheduler": scheduler.state_dict()
             }, new_ckpt)
 
