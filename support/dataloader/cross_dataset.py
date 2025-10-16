@@ -83,9 +83,13 @@ def get_image_label_pairs(img_root, lbl_root, img_exts=(".png", ".jpg", ".jpeg")
 
     return pairs
 
+from torch.utils.data.dataloader import default_collate
+
 def collate_fn(batch):
     batch = [b for b in batch if b is not None]
-    return torch.utils.data.dataloader.default_collate(batch)
+    if len(batch) == 0:
+        return None  # Skip if entire batch failed
+    return default_collate(batch)
 
 # ===================== Create train loader =====================
 def create_loader(dataset_paths, batch_size=16, size=(160, 128)):

@@ -96,10 +96,13 @@ def get_image_label_pairs(directory, img_ext=".png", label_ext=".npy"):
 
     return pairs
 
+from torch.utils.data.dataloader import default_collate
+
 def collate_fn(batch):
     batch = [b for b in batch if b is not None]
-    return torch.utils.data.dataloader.default_collate(batch)
-
+    if len(batch) == 0:
+        return None  # Skip if entire batch failed
+    return default_collate(batch)
 
 # ===================== Hàm tạo DataLoader =====================
 def create_data_loaders(data_root, batch_size=16, size=(160, 128)):

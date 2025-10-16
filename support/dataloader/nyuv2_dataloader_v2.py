@@ -101,10 +101,13 @@ class NYUDataset(Dataset):
 
         return rgb_tensor, depth_tensor
 
+from torch.utils.data.dataloader import default_collate
+
 def collate_fn(batch):
     batch = [b for b in batch if b is not None]
-    return torch.utils.data.dataloader.default_collate(batch)
-
+    if len(batch) == 0:
+        return None  # Skip if entire batch failed
+    return default_collate(batch)
 
 def create_data_loaders(batch_size=16, subset=False):
     print("Creating dataset... patience.")
