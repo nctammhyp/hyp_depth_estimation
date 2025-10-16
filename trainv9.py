@@ -298,7 +298,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
-    optimizer = torch.optim.ASGD(
+    optim = torch.optim.ASGD(
         model.parameters(),
         lr=0.01,            # max LR ban đầu
         lambd=0.0001,
@@ -308,7 +308,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     )
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer,
+        optim,
         T_0=40,        # 40 epoch / chu kỳ
         T_mult=2,      # chu kỳ sau dài gấp đôi
         eta_min=5e-4   # LR tối thiểu
