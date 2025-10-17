@@ -547,10 +547,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             }, new_ckpt)
 
 
-            # inference cho best checkpoint
-            inference_sample(model, state_path, device, model_type="best")
+        #     # inference cho best checkpoint
+        #     inference_sample(model, state_path, device, model_type="best")
 
-        inference_sample(model, state_path, device, model_type="last")
+        # inference_sample(model, state_path, device, model_type="last")
 
 
         # Cập nhật history
