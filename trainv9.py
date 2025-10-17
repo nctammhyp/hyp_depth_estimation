@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
-from depth_model.fdepth_resnet_v2 import FastDepthV2
-# from depth_model.depth_mobile import FastDepthV2, weights_init
+# from depth_model.fdepth_resnet_v2 import FastDepthV2
+from depth_model.depth_mobile import FastDepthV2, weights_init
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -266,17 +266,33 @@ def inference_sample(model, state_path, device, model_type="last"):
         print(f"[INFO] Inference completed. Total processed images: {total_images}")
 
 
-def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 60:
+# def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
+#     if epoch < 60:
+#         lr = learning_rate
+#     elif epoch < 120:
+#         lr = learning_rate / 2   # 0.0025
+#     elif epoch < 160:
+#         lr = learning_rate / 4   # 0.00125
+#     else:
+#         lr = learning_rate / 8   # 0.000625
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
+
+
+def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
+    if epoch < 30:
         lr = learning_rate
+    elif epoch < 60:
+        lr = learning_rate / 2
     elif epoch < 120:
-        lr = learning_rate / 2   # 0.0025
+        lr = learning_rate / 4   # 0.0025
     elif epoch < 160:
-        lr = learning_rate / 4   # 0.00125
+        lr = learning_rate / 8   # 0.00125
     else:
-        lr = learning_rate / 8   # 0.000625
+        lr = learning_rate / 16   # 0.000625
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # params
@@ -284,7 +300,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 600
-    learning_rate=0.005
+    learning_rate=0.01
 
 
 
@@ -296,8 +312,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     model = FastDepthV2()
 
-    # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
-    # model.decoder.apply(weights_init)
+    model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    model.decoder.apply(weights_init)
     
     
     model.to(device)
@@ -315,7 +331,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     optim = torch.optim.ASGD(
         model.parameters(),
-        lr=0.005,            # max LR ban đầu
+        lr=learning_rate,            # max LR ban đầu
         lambd=0.0001,
         alpha=0.75,
         t0=1e6,
@@ -585,4 +601,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/19")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/20")
