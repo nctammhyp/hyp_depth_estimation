@@ -414,7 +414,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
  
     # best val monitor: loss silog
-    best_val = 7092
+    best_val = 1e9
     # best_loss = 1e9
     history = {"train_loss": [], "val_loss": [], "val_metrics": []}
 
