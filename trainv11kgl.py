@@ -27,6 +27,8 @@ import torch.optim as optim
 
 import utils, loss_func
 from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss
+from metric_depth.util import loss_v2
+
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
@@ -279,19 +281,19 @@ def inference_sample(model, state_path, device, model_type="last"):
 #         param_group['lr'] = lr
 
 
-def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
-    if epoch < 30:
-        lr = learning_rate
-    elif epoch < 60:
-        lr = learning_rate / 2
-    elif epoch < 120:
-        lr = learning_rate / 4   # 0.0025
-    elif epoch < 160:
-        lr = learning_rate / 8   # 0.00125
-    else:
-        lr = learning_rate / 16   # 0.000625
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+# def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
+#     if epoch < 30:
+#         lr = learning_rate
+#     elif epoch < 60:
+#         lr = learning_rate / 2
+#     elif epoch < 120:
+#         lr = learning_rate / 4   # 0.0025
+#     elif epoch < 160:
+#         lr = learning_rate / 8   # 0.00125
+#     else:
+#         lr = learning_rate / 16   # 0.000625
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
 
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
@@ -445,7 +447,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        adjust_learning_rate(optim, epoch, learning_rate)
+        # adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
