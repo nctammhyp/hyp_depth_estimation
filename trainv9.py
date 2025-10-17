@@ -38,7 +38,7 @@ import glob
 
 import time
 
-from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3
+from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3, outdoor_v1
 from torch.utils.data import ConcatDataset, DataLoader
 
 
@@ -374,12 +374,17 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
         train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(160, 128))
 
+        train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(160, 128))
+
+
         print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
         print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
         print(f"train_loader_v2: {len(train_loader_v2.dataset)} samples ({len(train_loader_v2)} batches)")
         print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
         print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
         print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
+        print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
+
 
 
         # Gom tất cả dataset lại (kể cả val)
@@ -388,7 +393,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             train_loader_v2.dataset,
             train_loader_v3.dataset,
             val_loader_v3.dataset,   # thêm val_loader_v3
-            train_loader_v4.dataset
+            train_loader_v4.dataset,
+            train_loader_v5.dataset
         ]
 
         # Gộp chúng lại
@@ -414,7 +420,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
  
     # best val monitor: loss silog
-    best_val = 7092
+    best_val = 1e9
     # best_loss = 1e9
     history = {"train_loss": [], "val_loss": [], "val_metrics": []}
 
