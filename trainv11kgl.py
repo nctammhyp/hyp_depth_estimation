@@ -326,19 +326,19 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
     # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
-    optim = torch.optim.ASGD(
-        model.parameters(),
-        lr=learning_rate,            # max LR ban đầu
-        lambd=0.0001,
-        alpha=0.75,
-        t0=1e6,
-        weight_decay=0
-    )
+    # optim = torch.optim.ASGD(
+    #     model.parameters(),
+    #     lr=learning_rate,            # max LR ban đầu
+    #     lambd=0.0001,
+    #     alpha=0.75,
+    #     t0=1e6,
+    #     weight_decay=0
+    # )
 
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
