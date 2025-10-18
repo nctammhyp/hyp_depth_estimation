@@ -109,7 +109,7 @@ def collate_fn(batch):
         return None  # Skip if entire batch failed
     return default_collate(batch)
 
-def create_data_loaders(batch_size=16, subset=False):
+def create_data_loaders(batch_size=8, subset=False):
     print("Creating dataset... patience.")
     # base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
     base_dir = "/kaggle/working/nyuv2/content/nyuv2/nyuv2_partial_406"
