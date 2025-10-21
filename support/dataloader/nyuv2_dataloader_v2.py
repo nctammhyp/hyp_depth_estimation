@@ -24,7 +24,7 @@ def h5_loader(path):
 class NYUDataset(Dataset):
     def __init__(self, root_dir, train, loader=h5_loader):
         self.loader = loader
-        self.output_size = (322, 196)  # (H, W)
+        self.output_size = (196, 322)  # (H, W)
         self.root_dir = root_dir
         self.train = train
 
