@@ -116,8 +116,8 @@ def create_train_loader(batch_size=16, size=(160, 128)):
     base = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/cross_dataset_v3"
 
     dataset_paths = [
-        (os.path.join(base, "images/eth3d"),        os.path.join(base, "labels_npy/eth3d")),
-        (os.path.join(base, "images/small_diode"),  os.path.join(base, "labels_npy/small_diode")),
+        (os.path.join(base, "images/eth3d"),        os.path.join(base, "labels_npy_322_196/eth3d")),
+        (os.path.join(base, "images/small_diode"),  os.path.join(base, "labels_npy_322_196/small_diode")),
         # Bạn có thể thêm nhiều dataset khác ở đây
     ]
 

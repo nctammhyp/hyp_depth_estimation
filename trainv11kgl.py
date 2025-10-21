@@ -330,7 +330,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #   )
     
 
-    optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
     
 
     
@@ -338,14 +338,14 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
-    # optim = torch.optim.ASGD(
-    #     model.parameters(),
-    #     lr=learning_rate,            # max LR ban đầu
-    #     lambd=0.0001,
-    #     alpha=0.75,
-    #     t0=1e6,
-    #     weight_decay=0
-    # )
+    optim = torch.optim.ASGD(
+        model.parameters(),
+        lr=learning_rate,            # max LR ban đầu
+        lambd=0.0001,
+        alpha=0.75,
+        t0=1e6,
+        weight_decay=0
+    )
 
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
@@ -369,11 +369,11 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     print('Model created')
 
     # criterion = SiLogLoss() # author's loss
-    # criterion = CustomLoss()
+    criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))

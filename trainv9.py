@@ -370,8 +370,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     print('Model created')
 
-    # criterion = SiLogLoss() # author's loss
-    criterion = CustomLoss()
+    criterion = SiLogLoss() # author's loss
+    # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
@@ -418,7 +418,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # Tạo DataLoader chung
         combined_train_loader = DataLoader(
             combined_train_dataset,
-            batch_size=16,
+            batch_size=64,
             shuffle=True,       # quan trọng để trộn toàn bộ data
             num_workers=8,
             pin_memory=True,
@@ -622,4 +622,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/21")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/22")
