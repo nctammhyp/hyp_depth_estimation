@@ -112,7 +112,7 @@ def collate_fn(batch):
 def create_data_loaders(batch_size=8, subset=False):
     print("Creating dataset... patience.")
     # base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
-    base_dir = "/kaggle/working/nyuv2/content/nyuv2/nyuv2_partial_406"
+    base_dir = "/content/nyuv2/content/nyuv2/nyuv2_partial_406"
 
     train_path = os.path.join(base_dir, "train")
     val_path = os.path.join(base_dir, "val")

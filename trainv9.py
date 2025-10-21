@@ -229,8 +229,11 @@ def inference_sample(model, state_path, device, model_type="last"):
                 gt_depth = np.load(label_path).astype(np.float32)
 
                 # Resize về input size của model (160x128)
-                rgb_resized = cv2.resize(rgb, (160, 128))
-                gt_resized = cv2.resize(gt_depth, (160, 128))
+                # rgb_resized = cv2.resize(rgb, (160, 128))
+                # gt_resized = cv2.resize(gt_depth, (160, 128))
+
+                rgb_resized = cv2.resize(rgb, (322, 196))
+                gt_resized = cv2.resize(gt_depth, (322, 196))
 
                 # Normalize GT depth để visualize
                 gt_resized = (gt_resized - gt_resized.min()) / (gt_resized.max() - gt_resized.min() + epsilon)
@@ -252,7 +255,8 @@ def inference_sample(model, state_path, device, model_type="last"):
                 pred_colormap = (plt.cm.plasma(pred_depth)[:, :, :3] * 255).astype(np.uint8)
 
                 # Resize RGB gốc về cùng kích thước
-                rgb_show = cv2.resize(rgb, (160, 128))
+                # rgb_show = cv2.resize(rgb, (160, 128))
+                rgb_show = cv2.resize(rgb, (322, 196))
 
                 # =========================
                 # 5. Horizontal concat
@@ -271,32 +275,32 @@ def inference_sample(model, state_path, device, model_type="last"):
         print(f"[INFO] Inference completed. Total processed images: {total_images}")
 
 
-# def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-#     if epoch < 60:
-#         lr = learning_rate
-#     elif epoch < 120:
-#         lr = learning_rate / 2   # 0.0025
-#     elif epoch < 160:
-#         lr = learning_rate / 4   # 0.00125
-#     else:
-#         lr = learning_rate / 8   # 0.000625
-#     for param_group in optimizer.param_groups:
-#         param_group['lr'] = lr
-
-
-def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
-    if epoch < 10:
+def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
+    if epoch < 60:
         lr = learning_rate
-    elif epoch < 60:
-        lr = learning_rate / 2
     elif epoch < 120:
-        lr = learning_rate / 4   # 0.0025
+        lr = learning_rate / 2   # 0.0025
     elif epoch < 160:
-        lr = learning_rate / 8   # 0.00125
+        lr = learning_rate / 4   # 0.00125
     else:
-        lr = learning_rate / 16   # 0.000625
+        lr = learning_rate / 8   # 0.000625
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+
+# def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
+#     if epoch < 10:
+#         lr = learning_rate
+#     elif epoch < 60:
+#         lr = learning_rate / 2
+#     elif epoch < 120:
+#         lr = learning_rate / 4   # 0.0025
+#     elif epoch < 160:
+#         lr = learning_rate / 8   # 0.00125
+#     else:
+#         lr = learning_rate / 16   # 0.000625
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
 
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
@@ -329,8 +333,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
-    # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
@@ -345,6 +349,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+
+    optim = QuantileClip.as_optimizer(
+        optimizer=optim,
+        quantile=0.8,
+        history_length=1000,
+    )
 
     
 
@@ -361,11 +371,11 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     print('Model created')
 
     # criterion = SiLogLoss() # author's loss
-    # criterion = CustomLoss()
+    criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
@@ -374,12 +384,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     use_cross_dataset = True
     if use_cross_dataset:
-        train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(160, 128))
-        train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(160, 128))
+        train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
+        train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(322, 196))
         train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
-        train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(160, 128))
+        train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(322, 196))
 
-        train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(160, 128))
+        train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
 
 
         print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
