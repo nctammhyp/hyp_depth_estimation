@@ -535,14 +535,14 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         for k in results:
             results[k] = round((results[k] / len(val_loader)).item(), 3)
 
-        # ===== Save Checkpoint =====
-        torch.save({
-            "model": model.state_dict(),
-            "optim": optim.state_dict(),
-            "epoch": epoch
+        # # ===== Save Checkpoint =====
+        # torch.save({
+        #     "model": model.state_dict(),
+        #     "optim": optim.state_dict(),
+        #     "epoch": epoch
 
-            # "scheduler": scheduler.state_dict()
-        }, f"{state_path}/last_checkpoint.pth")
+        #     # "scheduler": scheduler.state_dict()
+        # }, f"{state_path}/last_checkpoint.pth")
 
         # if results['abs_rel'] < best_val_absrel:
         if results['loss'] < best_val:
@@ -552,12 +552,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
             # 1. Lưu checkpoint mới
             # torch.save(model.state_dict(), new_ckpt)
-            torch.save({
-                "model": model.state_dict(),
-                "optim": optim.state_dict(),
-                "epoch": epoch
-                # "scheduler": scheduler.state_dict()
-            }, new_ckpt)
+            # torch.save({
+            #     "model": model.state_dict(),
+            #     "optim": optim.state_dict(),
+            #     "epoch": epoch
+            #     # "scheduler": scheduler.state_dict()
+            # }, new_ckpt)
 
 
         #     # inference cho best checkpoint
@@ -572,8 +572,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         history["val_metrics"].append(results)
 
         # Lưu log JSON
-        with open(f"{state_path}/history.json", "w") as f:
-            json.dump(history, f, indent=2)
+        # with open(f"{state_path}/history.json", "w") as f:
+        #     json.dump(history, f, indent=2)
 
 
         print(f"epoch_{epoch}, train_loss={avg_loss:.5f}, val_metrics={results}, - LR = {optim.param_groups[0]['lr']:.6f}")
