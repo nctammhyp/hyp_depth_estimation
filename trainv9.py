@@ -276,11 +276,11 @@ def inference_sample(model, state_path, device, model_type="last"):
 
 
 def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 60:
+    if epoch < 25:
         lr = learning_rate
-    elif epoch < 120:
+    elif epoch < 60:
         lr = learning_rate / 2   # 0.0025
-    elif epoch < 160:
+    elif epoch < 120:
         lr = learning_rate / 4   # 0.00125
     else:
         lr = learning_rate / 8   # 0.000625
@@ -334,18 +334,18 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #   )
 
     # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
-    optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
-    # optim = torch.optim.ASGD(
-    #     model.parameters(),
-    #     lr=learning_rate,            # max LR ban đầu
-    #     lambd=0.0001,
-    #     alpha=0.75,
-    #     t0=1e6,
-    #     weight_decay=0
-    # )
+    optim = torch.optim.ASGD(
+        model.parameters(),
+        lr=learning_rate,            # max LR ban đầu
+        lambd=0.0001,
+        alpha=0.75,
+        t0=1e6,
+        weight_decay=0
+    )
 
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
@@ -389,7 +389,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
         # train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(322, 196))
 
-        # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
+        train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
 
 
         print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
@@ -398,7 +398,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
         # print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
         # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
-        # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
+        print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
 
 
 
@@ -409,7 +409,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # train_loader_v3.dataset,
             # val_loader_v3.dataset,   # thêm val_loader_v3
             # train_loader_v4.dataset,
-            # train_loader_v5.dataset
+            train_loader_v5.dataset
         ]
 
         # Gộp chúng lại
