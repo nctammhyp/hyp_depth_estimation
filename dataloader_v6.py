@@ -13,6 +13,20 @@ import albumentations as A
 from torchvision.transforms import Compose
 from transform import Resize, NormalizeImage, PrepareForNet, Crop  # Giữ nguyên
 
+def depth_to_norm_log(depth, d_min=0.001, d_max=600.0):
+    """
+    Normalize depth to [0, 1] (log-space)
+    - Input depth: giá trị càng xa càng nhỏ
+    - Output s: càng xa -> càng lớn
+    - d_min, d_max: hiểu theo nghĩa vật lý (gần nhỏ, xa lớn)
+    """
+    depth = np.clip(depth, d_min, d_max)
+    log_d = np.log(depth)
+    log_d_min, log_d_max = np.log(d_min), np.log(d_max)
+    # đảo chiều để xa -> lớn
+    s = (log_d_max - log_d) / (log_d_max - log_d_min)
+    return np.clip(s, 0.0, 1.0).astype(np.float32)
+
 
 class DepthDataset(Dataset):
     def __init__(self, paths, mode="train", size=(224, 224)):
@@ -30,6 +44,9 @@ class DepthDataset(Dataset):
 
     def __len__(self):
         return len(self.paths)
+    
+    def normalize_depth(self, depth):
+        return depth_to_norm_log(depth, d_min=0.001, d_max=600.0)
 
     def __getitem__(self, index):
         try:
@@ -52,6 +69,9 @@ class DepthDataset(Dataset):
                 rgb, depth = augmented["image"] / 255.0, augmented["mask"]
             else:
                 rgb, depth = rgb / 255.0, depth
+
+
+            depth = self.normalize_depth(depth)
 
             # Chuyển sang tensor
             rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]

@@ -333,8 +333,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
-    # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
@@ -350,11 +350,11 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
 
-    optim = QuantileClip.as_optimizer(
-        optimizer=optim,
-        quantile=0.8,
-        history_length=1000,
-    )
+    # optim = QuantileClip.as_optimizer(
+    #     optimizer=optim,
+    #     quantile=0.8,
+    #     history_length=1000,
+    # )
 
     
 
@@ -384,32 +384,32 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     use_cross_dataset = True
     if use_cross_dataset:
-        # train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
+        train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
         # train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(322, 196))
-        train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
-        train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(322, 196))
+        # train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
+        # train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(322, 196))
 
-        train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
+        # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
 
 
-        # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
-        # print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
+        print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
+        print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
         # print(f"train_loader_v2: {len(train_loader_v2.dataset)} samples ({len(train_loader_v2)} batches)")
-        print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
-        print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
-        print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
-        print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
+        # print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
+        # print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
+        # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
+        # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
 
 
 
         # Gom tất cả dataset lại (kể cả val)
         datasets = [
-            # train_loader_v1.dataset,
+            train_loader_v1.dataset,
             # train_loader_v2.dataset,
-            train_loader_v3.dataset,
-            val_loader_v3.dataset,   # thêm val_loader_v3
-            train_loader_v4.dataset,
-            train_loader_v5.dataset
+            # train_loader_v3.dataset,
+            # val_loader_v3.dataset,   # thêm val_loader_v3
+            # train_loader_v4.dataset,
+            # train_loader_v5.dataset
         ]
 
         # Gộp chúng lại
@@ -425,8 +425,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             drop_last=True
         )
 
-        # train_loader, val_loader = combined_train_loader, val_loader_v1
-        train_loader, val_loader = combined_train_loader, train_loader_v5
+        train_loader, val_loader = combined_train_loader, val_loader_v1
+        # train_loader, val_loader = combined_train_loader, train_loader_v5
 
     else:
         # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
