@@ -38,7 +38,7 @@ import glob
 
 import time
 
-from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3, outdoor_v1
+from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3, outdoor_v1, outdoor_v2
 from torch.utils.data import ConcatDataset, DataLoader
 
 
@@ -275,17 +275,17 @@ def inference_sample(model, state_path, device, model_type="last"):
         print(f"[INFO] Inference completed. Total processed images: {total_images}")
 
 
-def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 25:
-        lr = learning_rate
-    elif epoch < 60:
-        lr = learning_rate / 2   # 0.0025
-    elif epoch < 120:
-        lr = learning_rate / 4   # 0.00125
-    else:
-        lr = learning_rate / 8   # 0.000625
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+# def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
+#     if epoch < 25:
+#         lr = learning_rate
+#     elif epoch < 60:
+#         lr = learning_rate / 2   # 0.0025
+#     elif epoch < 120:
+#         lr = learning_rate / 4   # 0.00125
+#     else:
+#         lr = learning_rate / 8   # 0.000625
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
 
 
 # def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
@@ -335,17 +335,19 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
     # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    optim = torch.optim.AdamW(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
-    optim = torch.optim.ASGD(
-        model.parameters(),
-        lr=learning_rate,            # max LR ban đầu
-        lambd=0.0001,
-        alpha=0.75,
-        t0=1e6,
-        weight_decay=0
-    )
+    # optim = torch.optim.ASGD(
+    #     model.parameters(),
+    #     lr=learning_rate,            # max LR ban đầu
+    #     lambd=0.0001,
+    #     alpha=0.75,
+    #     t0=1e6,
+    #     weight_decay=0
+    # )
 
 
     # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
@@ -384,32 +386,35 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     use_cross_dataset = True
     if use_cross_dataset:
-        train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
+        # train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
         # train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(322, 196))
         # train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
         # train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(322, 196))
 
-        train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
+        # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
+        train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
 
 
-        print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
-        print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
+        # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
+        # print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
         # print(f"train_loader_v2: {len(train_loader_v2.dataset)} samples ({len(train_loader_v2)} batches)")
         # print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
         # print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
         # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
-        print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
+        # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
+        print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
 
 
 
         # Gom tất cả dataset lại (kể cả val)
         datasets = [
-            train_loader_v1.dataset,
+            # train_loader_v1.dataset,
             # train_loader_v2.dataset,
             # train_loader_v3.dataset,
             # val_loader_v3.dataset,   # thêm val_loader_v3
             # train_loader_v4.dataset,
-            train_loader_v5.dataset
+            # train_loader_v5.dataset
+            train_loader_v6.dataset
         ]
 
         # Gộp chúng lại
@@ -425,7 +430,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             drop_last=True
         )
 
-        train_loader, val_loader = combined_train_loader, val_loader_v1
+        train_loader, val_loader = combined_train_loader, val_loader_v6
         # train_loader, val_loader = combined_train_loader, train_loader_v5
 
     else:
@@ -468,7 +473,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        adjust_learning_rate(optim, epoch, learning_rate)
+        # adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
@@ -624,4 +629,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/22")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/23")
