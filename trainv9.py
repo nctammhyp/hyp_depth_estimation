@@ -392,7 +392,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # train_loader_v4 = cross_dataset.create_train_loader(batch_size=16, size=(322, 196))
 
         # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
-        train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
+        train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
 
 
         # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
@@ -518,13 +518,13 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # test_loss += criterion('l1',pred, depth).item()
                 # pred = pred.squeeze(1).squeeze(0)
 
-                mask = (depth >= 0.001)
+                # mask = (depth >= 0.001)
                 # cur_results = eval_depth(pred, depth)
 
                 # print(depth)
 
 
-                # mask = (depth > 1e-3) & (depth <= max_depth)
+                mask = (depth > 1e-3) & (depth <= max_depth)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 
