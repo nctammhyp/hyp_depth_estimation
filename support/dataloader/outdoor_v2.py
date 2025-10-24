@@ -209,8 +209,8 @@ def create_data_loaders(data_root, batch_size=64, size=(160, 128)):
                               shuffle=True, num_workers=8,
                               pin_memory=True, drop_last=True)
 
-    val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                            shuffle=False, num_workers=1,
+    val_loader = DataLoader(val_dataset, batch_size=1,
+                            shuffle=False, num_workers=8,
                             pin_memory=True)
 
     return train_loader, val_loader
