@@ -286,69 +286,65 @@ class CustomLoss(nn.Module):
         return loss
     
 
+import torch
+import torch.nn as nn
+import numpy as np
 
-class L1NormalLoss(nn.Module):
-    def __init__(self, eps=1e-6):
-        super().__init__()
-        self.eps = eps
+class DepthLoss_custom(nn.Module):
+    def __init__(self, l1_factor=1.0, normal_factor=1.0):
+        super(DepthLoss_custom, self).__init__()
+        self.l1_factor = l1_factor
+        self.normal_factor = normal_factor
 
-    def forward(self, pred, target, mask):
-        """
-        pred, target: (B,H,W) hoặc (H,W)
-        mask: Boolean tensor cùng shape
-        """
-        # Đảm bảo có batch dimension
-        if pred.ndim == 2:
-            pred = pred.unsqueeze(0)
-            target = target.unsqueeze(0)
-            mask = mask.unsqueeze(0)
+    def forward(self, pred, target):
+        # Tạo mask vùng hợp lệ (depth > 0)
+        valid_mask = (target > 0).detach()
 
-        # ========== L1 Loss ==========
-        valid_mask = mask.detach()
-        diff = (target - pred)[valid_mask]
-        l1_loss = diff.abs().mean()
+        # L1 loss trên vùng hợp lệ
+        l1_loss = torch.abs(pred[valid_mask] - target[valid_mask]).mean()
 
-        # ========== Surface Normal Loss ==========
-        normal_loss = self.surface_normal_loss(pred, target, valid_mask)
+        # Tính gradient theo Sobel
+        grad_target = self.imgrad_yx(target)
+        grad_pred = self.imgrad_yx(pred)
 
-        # ========== Tổng hợp (tỉ lệ 1:1) ==========
-        total_loss = l1_loss + normal_loss
+        # Tính NormLoss
+        normal_loss = self.NormLoss(grad_pred, grad_target)
+
+        # Tổng hợp loss
+        total_loss = self.l1_factor * l1_loss + self.normal_factor * normal_loss
         return total_loss
 
-    def surface_normal_loss(self, pred, target, mask):
-        """Surface Normal Cosine Similarity Loss"""
+    # ======================== NormLoss ========================
+    def NormLoss(self, grad_pred, grad_target):
+        # grad_pred, grad_target: (N, 2*C, H*W)
+        prod = (grad_pred[:, :, None, :] @ grad_target[:, :, :, None]).squeeze(-1).squeeze(-1)
+        pred_norm = torch.sqrt(torch.sum(grad_pred ** 2, dim=-1) + 1e-6)
+        target_norm = torch.sqrt(torch.sum(grad_target ** 2, dim=-1) + 1e-6)
+        cos_sim = prod / (pred_norm * target_norm + 1e-6)
+        return 1 - torch.mean(cos_sim)
 
-        def gradient_x(img):  # ∂D/∂x
-            return img[..., :, 1:] - img[..., :, :-1]
+    # ======================== Gradient Sobel ========================
+    def imgrad_yx(self, img):
+        N, C, _, _ = img.size()
+        grad_y, grad_x = self.imgrad(img)
+        return torch.cat((grad_y.view(N, C, -1), grad_x.view(N, C, -1)), dim=1)
 
-        def gradient_y(img):  # ∂D/∂y
-            return img[..., 1:, :] - img[..., :-1, :]
+    def imgrad(self, img):
+        img = torch.mean(img, 1, True)  # chuyển sang grayscale
+        fx = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]], dtype=np.float32)
+        fy = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float32)
 
-        # Gradient
-        dx_pred, dy_pred = gradient_x(pred), gradient_y(pred)
-        dx_tgt, dy_tgt = gradient_x(target), gradient_y(target)
+        # Conv kernel theo trục x
+        convx = nn.Conv2d(1, 1, kernel_size=3, padding=1, bias=False)
+        convx.weight = nn.Parameter(torch.from_numpy(fx).unsqueeze(0).unsqueeze(0))
+        # Conv kernel theo trục y
+        convy = nn.Conv2d(1, 1, kernel_size=3, padding=1, bias=False)
+        convy.weight = nn.Parameter(torch.from_numpy(fy).unsqueeze(0).unsqueeze(0))
 
-        # === FIX: crop lại để có cùng shape (B, 1, H-1, W-1) ===
-        min_h = min(dx_pred.shape[-2], dy_pred.shape[-2])
-        min_w = min(dx_pred.shape[-1], dy_pred.shape[-1])
+        if img.is_cuda:
+            convx = convx.cuda()
+            convy = convy.cuda()
 
-        dx_pred = dx_pred[..., :min_h, :min_w]
-        dy_pred = dy_pred[..., :min_h, :min_w]
-        dx_tgt = dx_tgt[..., :min_h, :min_w]
-        dy_tgt = dy_tgt[..., :min_h, :min_w]
-
-        # Normal vector
-        n_pred = torch.stack((-dx_pred, -dy_pred, torch.ones_like(dx_pred)), dim=-1)
-        n_tgt = torch.stack((-dx_tgt, -dy_tgt, torch.ones_like(dx_tgt)), dim=-1)
-
-        # Normalize
-        n_pred = F.normalize(n_pred, dim=-1)
-        n_tgt = F.normalize(n_tgt, dim=-1)
-
-        # Cosine similarity
-        cos = (n_pred * n_tgt).sum(dim=-1)
-        cos = torch.clamp(cos, -1.0, 1.0)
-        normal_loss = (1 - cos).mean()
-
-        return normal_loss
-
+        grad_x = convx(img)
+        grad_y = convy(img)
+        return grad_y, grad_x
