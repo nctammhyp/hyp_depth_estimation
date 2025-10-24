@@ -290,34 +290,56 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+
+
 class DepthLoss_custom(nn.Module):
     def __init__(self, l1_factor=1.0, normal_factor=1.0):
         super(DepthLoss_custom, self).__init__()
         self.l1_factor = l1_factor
         self.normal_factor = normal_factor
 
+        # Sobel kernels (register as buffers để không tạo lại mỗi lần)
+        fx = np.array([[1, 0, -1],
+                       [2, 0, -2],
+                       [1, 0, -1]], dtype=np.float32)
+        fy = np.array([[1, 2, 1],
+                       [0, 0, 0],
+                       [-1, -2, -1]], dtype=np.float32)
+
+        self.register_buffer('kernel_fx', torch.from_numpy(fx).unsqueeze(0).unsqueeze(0))
+        self.register_buffer('kernel_fy', torch.from_numpy(fy).unsqueeze(0).unsqueeze(0))
+
     def forward(self, pred, target):
-        # Tạo mask vùng hợp lệ (depth > 0)
+        # Đảm bảo shape (B, 1, H, W)
+        if pred.dim() == 2:
+            pred = pred.unsqueeze(0).unsqueeze(0)
+            target = target.unsqueeze(0).unsqueeze(0)
+        elif pred.dim() == 3:
+            pred = pred.unsqueeze(1)
+            target = target.unsqueeze(1)
+
+        # Mask hợp lệ (depth > 0)
         valid_mask = (target > 0).detach()
 
-        # L1 loss trên vùng hợp lệ
+        # L1 loss
         l1_loss = torch.abs(pred[valid_mask] - target[valid_mask]).mean()
 
-        # Tính gradient theo Sobel
+        # Gradient loss (NormLoss)
         grad_target = self.imgrad_yx(target)
         grad_pred = self.imgrad_yx(pred)
-
-        # Tính NormLoss
         normal_loss = self.NormLoss(grad_pred, grad_target)
 
-        # Tổng hợp loss
         total_loss = self.l1_factor * l1_loss + self.normal_factor * normal_loss
         return total_loss
 
     # ======================== NormLoss ========================
     def NormLoss(self, grad_pred, grad_target):
         # grad_pred, grad_target: (N, 2*C, H*W)
-        prod = (grad_pred[:, :, None, :] @ grad_target[:, :, :, None]).squeeze(-1).squeeze(-1)
+        prod = torch.sum(grad_pred * grad_target, dim=-1)
         pred_norm = torch.sqrt(torch.sum(grad_pred ** 2, dim=-1) + 1e-6)
         target_norm = torch.sqrt(torch.sum(grad_target ** 2, dim=-1) + 1e-6)
         cos_sim = prod / (pred_norm * target_norm + 1e-6)
@@ -325,26 +347,16 @@ class DepthLoss_custom(nn.Module):
 
     # ======================== Gradient Sobel ========================
     def imgrad_yx(self, img):
-        N, C, _, _ = img.size()
+        """
+        Trả về concat(grad_y, grad_x) flatten theo không gian: (N, 2*C, H*W)
+        """
         grad_y, grad_x = self.imgrad(img)
+        N, C, H, W = grad_y.size()
         return torch.cat((grad_y.view(N, C, -1), grad_x.view(N, C, -1)), dim=1)
 
     def imgrad(self, img):
-        img = torch.mean(img, 1, True)  # chuyển sang grayscale
-        fx = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]], dtype=np.float32)
-        fy = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float32)
-
-        # Conv kernel theo trục x
-        convx = nn.Conv2d(1, 1, kernel_size=3, padding=1, bias=False)
-        convx.weight = nn.Parameter(torch.from_numpy(fx).unsqueeze(0).unsqueeze(0))
-        # Conv kernel theo trục y
-        convy = nn.Conv2d(1, 1, kernel_size=3, padding=1, bias=False)
-        convy.weight = nn.Parameter(torch.from_numpy(fy).unsqueeze(0).unsqueeze(0))
-
-        if img.is_cuda:
-            convx = convx.cuda()
-            convy = convy.cuda()
-
-        grad_x = convx(img)
-        grad_y = convy(img)
+        """Tính gradient Sobel theo trục y, x"""
+        img_gray = torch.mean(img, dim=1, keepdim=True)  # (N,1,H,W)
+        grad_x = F.conv2d(img_gray, self.kernel_fx, padding=1)
+        grad_y = F.conv2d(img_gray, self.kernel_fy, padding=1)
         return grad_y, grad_x
