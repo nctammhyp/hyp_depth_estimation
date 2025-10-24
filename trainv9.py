@@ -223,7 +223,7 @@ def inference_sample(model, state_path, device, model_type="last"):
                 # Đường dẫn file .npy tương ứng
                 label_path = os.path.join(scene_label_dir, base_name + ".npy")
 
-                print(label_path)
+                # print(label_path)
 
                 if not os.path.exists(label_path):
                     print(f"Warning: No GT .npy found for {file_name} in scene {scene_name}, skipping...")
