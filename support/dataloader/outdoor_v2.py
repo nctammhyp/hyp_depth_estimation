@@ -93,8 +93,8 @@ def get_image_label_pairs(directory, img_ext=".png", label_ext=".npy"):
     # lbl_root = os.path.join(directory, "labels_npy")
     lbl_root = os.path.join(directory, "labels_npy_322_196")
 
-    # print(f"img root: {img_root}")
-    # print(f"lbl_root: {lbl_root}")
+    print(f"img root: {img_root}")
+    print(f"lbl_root: {lbl_root}")
     
     pairs = []
     if not os.path.exists(img_root) or not os.path.exists(lbl_root):
