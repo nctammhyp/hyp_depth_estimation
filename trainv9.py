@@ -208,7 +208,12 @@ def inference_sample(model, state_path, device, model_type="last"):
                 continue
 
             # Lấy danh sách file ảnh trong scene
-            image_paths = sorted(glob.glob(os.path.join(scene_img_dir, "*.png")))
+            # image_paths = sorted(glob.glob(os.path.join(scene_img_dir, "*.png")))
+            image_paths = sorted(
+                glob.glob(os.path.join(scene_img_dir, "*.png")) +
+                glob.glob(os.path.join(scene_img_dir, "*.jpg"))
+            )
+
             print(f"[INFO] Scene {scene_name}: Found {len(image_paths)} images.")
 
             for img_path in image_paths:
