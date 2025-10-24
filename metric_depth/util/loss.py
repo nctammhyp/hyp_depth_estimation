@@ -318,25 +318,37 @@ class L1NormalLoss(nn.Module):
     def surface_normal_loss(self, pred, target, mask):
         """Surface Normal Cosine Similarity Loss"""
 
-        def gradient_x(img): return img[..., :, 1:] - img[..., :, :-1]
-        def gradient_y(img): return img[..., 1:, :] - img[..., :-1, :]
+        def gradient_x(img):  # ∂D/∂x
+            return img[..., :, 1:] - img[..., :, :-1]
 
-        # Gradient theo x, y
+        def gradient_y(img):  # ∂D/∂y
+            return img[..., 1:, :] - img[..., :-1, :]
+
+        # Gradient
         dx_pred, dy_pred = gradient_x(pred), gradient_y(pred)
         dx_tgt, dy_tgt = gradient_x(target), gradient_y(target)
 
-        # Cắt để cùng shape (B,H-1,W-1)
-        dx_pred, dy_pred = dx_pred[..., :-1], dy_pred[..., :, :-1]
-        dx_tgt, dy_tgt = dx_tgt[..., :-1], dy_tgt[..., :, :-1]
+        # === FIX: crop lại để có cùng shape (B, 1, H-1, W-1) ===
+        min_h = min(dx_pred.shape[-2], dy_pred.shape[-2])
+        min_w = min(dx_pred.shape[-1], dy_pred.shape[-1])
 
-        # Vector normal: n = (-∂xD, -∂yD, 1)
+        dx_pred = dx_pred[..., :min_h, :min_w]
+        dy_pred = dy_pred[..., :min_h, :min_w]
+        dx_tgt = dx_tgt[..., :min_h, :min_w]
+        dy_tgt = dy_tgt[..., :min_h, :min_w]
+
+        # Normal vector
         n_pred = torch.stack((-dx_pred, -dy_pred, torch.ones_like(dx_pred)), dim=-1)
         n_tgt = torch.stack((-dx_tgt, -dy_tgt, torch.ones_like(dx_tgt)), dim=-1)
 
-        # Normalize và tính cosine
+        # Normalize
         n_pred = F.normalize(n_pred, dim=-1)
         n_tgt = F.normalize(n_tgt, dim=-1)
+
+        # Cosine similarity
         cos = (n_pred * n_tgt).sum(dim=-1)
         cos = torch.clamp(cos, -1.0, 1.0)
         normal_loss = (1 - cos).mean()
+
         return normal_loss
+
