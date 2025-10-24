@@ -189,7 +189,7 @@ def inference_sample(model, state_path, device, model_type="last"):
         os.makedirs(save_test, exist_ok=True)
 
         images_root = os.path.join(data_test, "images")
-        labels_root = os.path.join(data_test, "labels_npy")  # <-- Load từ thư mục chứa file .npy
+        labels_root = os.path.join(data_test, "labels_npy_322_196")  # <-- Load từ thư mục chứa file .npy
 
         # Lấy danh sách tất cả scene
         scene_list = sorted(os.listdir(images_root))
