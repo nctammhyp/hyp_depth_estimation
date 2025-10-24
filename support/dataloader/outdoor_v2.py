@@ -186,12 +186,12 @@ def create_data_loaders(data_root, batch_size=64, size=(160, 128)):
 
     train_dir = os.path.join(data_root, "train")
     # print(f"val path: {train_dir}")
-    # print(f"val_paths: {train_paths}")
+    print(f"val_paths: {train_paths}")
 
 
     val_dir = os.path.join(data_root, "val")
     # print(f"val path: {val_dir}")
-    # print(f"val_paths: {val_paths}")
+    print(f"val_paths: {val_paths}")
 
 
 
