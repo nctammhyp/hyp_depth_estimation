@@ -340,9 +340,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    # optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    optim = torch.optim.SGD(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
     # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
-    optim = torch.optim.AdamW(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.AdamW(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
@@ -379,12 +379,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     print('Model created')
 
-    criterion = SiLogLoss() # author's loss
+    # criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    # criterion = L1Loss()
+    criterion = L1Loss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
@@ -492,7 +492,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # mask = (depth > 1e-3) 
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            mask = (depth >= 0) & (depth < 1)
+            mask = (depth >= 0.001)
 
             # print("pred shape:", pred.shape)
             # print("target shape:", target.shape)
@@ -531,7 +531,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # print(depth)
 
 
-                mask = (depth >= 0) & (depth < 1)
+                mask = (depth >= 0.001)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 

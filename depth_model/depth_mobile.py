@@ -338,4 +338,4 @@ class FastDepthV2(nn.Module):
     x = x + layer1
 
     x= F.interpolate(self.decoder.conv5(x), scale_factor=2, mode='nearest')
-    return F.sigmoid(self.decoder.output(x))
+    return self.decoder.output(x)
