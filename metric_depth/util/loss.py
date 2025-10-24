@@ -317,6 +317,7 @@ class L1NormalLoss(nn.Module):
 
     def surface_normal_loss(self, pred, target, mask):
         """Surface Normal Cosine Similarity Loss"""
+
         def gradient_x(img): return img[..., :, 1:] - img[..., :, :-1]
         def gradient_y(img): return img[..., 1:, :] - img[..., :-1, :]
 
@@ -324,15 +325,17 @@ class L1NormalLoss(nn.Module):
         dx_pred, dy_pred = gradient_x(pred), gradient_y(pred)
         dx_tgt, dy_tgt = gradient_x(target), gradient_y(target)
 
-        # Tạo vector normal: n = (-∂xD, -∂yD, 1)
+        # Cắt để cùng shape (B,H-1,W-1)
+        dx_pred, dy_pred = dx_pred[..., :-1], dy_pred[..., :, :-1]
+        dx_tgt, dy_tgt = dx_tgt[..., :-1], dy_tgt[..., :, :-1]
+
+        # Vector normal: n = (-∂xD, -∂yD, 1)
         n_pred = torch.stack((-dx_pred, -dy_pred, torch.ones_like(dx_pred)), dim=-1)
         n_tgt = torch.stack((-dx_tgt, -dy_tgt, torch.ones_like(dx_tgt)), dim=-1)
 
-        # Normalize để tính cosine similarity
+        # Normalize và tính cosine
         n_pred = F.normalize(n_pred, dim=-1)
         n_tgt = F.normalize(n_tgt, dim=-1)
-
-        # Cosine distance
         cos = (n_pred * n_tgt).sum(dim=-1)
         cos = torch.clamp(cos, -1.0, 1.0)
         normal_loss = (1 - cos).mean()
