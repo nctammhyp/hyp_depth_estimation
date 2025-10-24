@@ -288,15 +288,15 @@ def inference_sample(model, state_path, device, model_type="last"):
 train bang l1 thi de lr lon tren nhieu ep vi du 30 ep
 """
 
-def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 30:
-        lr = learning_rate
-    elif epoch < 60:
-        lr = learning_rate / 4   # 0.00125
-    else:
-        lr = learning_rate / 8   # 0.000625
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+# def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
+#     if epoch < 30:
+#         lr = learning_rate
+#     elif epoch < 60:
+#         lr = learning_rate / 4   # 0.00125
+#     else:
+#         lr = learning_rate / 8   # 0.000625
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
 
 
 # def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
@@ -486,7 +486,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        adjust_learning_rate(optim, epoch, learning_rate)
+        # adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
