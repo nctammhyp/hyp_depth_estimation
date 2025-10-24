@@ -88,7 +88,7 @@ class DepthDataset(Dataset):
 # ===================== Lấy danh sách file ảnh/label =====================
 import os
 
-def get_image_label_pairs(directory, img_ext=".png", label_ext=".npy"):
+def get_image_label_pairs(directory, img_ext=".jpg", label_ext=".npy"):
     img_root = os.path.join(directory, "images")
     # lbl_root = os.path.join(directory, "labels_npy")
     lbl_root = os.path.join(directory, "labels_npy_322_196")
