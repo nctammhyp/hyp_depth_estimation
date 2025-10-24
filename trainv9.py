@@ -430,7 +430,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # Tạo DataLoader chung
         combined_train_loader = DataLoader(
             combined_train_dataset,
-            batch_size=64,
+            batch_size=8,
             shuffle=True,       # quan trọng để trộn toàn bộ data
             num_workers=8,
             pin_memory=True,
