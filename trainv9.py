@@ -26,7 +26,7 @@ import torch.optim as optim
 
 
 import utils, loss_func
-from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss, L1NormalLoss
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
@@ -282,11 +282,15 @@ def inference_sample(model, state_path, device, model_type="last"):
         print(f"[INFO] Inference completed. Total processed images: {total_images}")
 
 
+
+
+"""
+train bang l1 thi de lr lon tren nhieu ep vi du 30 ep
+"""
+
 def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 10:
+    if epoch < 30:
         lr = learning_rate
-    elif epoch < 30:
-        lr = learning_rate / 2   # 0.0025
     elif epoch < 60:
         lr = learning_rate / 4   # 0.00125
     else:
@@ -379,12 +383,14 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     print('Model created')
 
+    criterion = L1NormalLoss()
+
     # criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
@@ -455,8 +461,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/20/last_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/20/last_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/23/best_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/23/best_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
@@ -636,4 +642,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/23")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/24")
