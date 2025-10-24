@@ -13,7 +13,7 @@ import albumentations as A
 from torchvision.transforms import Compose
 from transform import Resize, NormalizeImage, PrepareForNet, Crop  # Giữ nguyên
 
-def depth_to_norm_log(depth, d_min=0.001, d_max=600.0):
+def depth_to_norm_log(depth, d_min=0.001, d_max=1000.0):
     """
     Normalize depth to [0, 1] (log-space)
     - Input depth: giá trị càng xa càng nhỏ
