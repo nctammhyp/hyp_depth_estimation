@@ -26,7 +26,7 @@ import torch.optim as optim
 
 
 import utils, loss_func
-from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss, DepthLoss_custom
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
@@ -129,8 +129,8 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    # loss = criterion(pred, target, mask)
-    loss = criterion(pred, target)
+    loss = criterion(pred, target, mask)
+    # loss = criterion(pred, target)
 
 
     return {
@@ -385,9 +385,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     print('Model created')
 
-    criterion = DepthLoss_custom()
+    # criterion = DepthLoss_custom()
 
-    # criterion = SiLogLoss() # author's loss
+    criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
@@ -500,15 +500,15 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # mask = (depth > 1e-3) 
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            # mask = (depth >= 0.00001)
+            mask = (depth >= 0.00001)
 
             # print("pred shape:", pred.shape)
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
 
-            # loss = criterion(pred,depth,mask)
+            loss = criterion(pred,depth,mask)
 
-            loss = criterion(pred, depth)
+            # loss = criterion(pred, depth)
 
             loss.backward()
             optim.step()
