@@ -26,7 +26,7 @@ import torch.optim as optim
 
 
 import utils, loss_func
-from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss, MSGradientLoss
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
@@ -387,12 +387,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # criterion = DepthLoss_custom()
 
-    criterion = SiLogLoss() # author's loss
+    # criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    # criterion = L1Loss()
+    criterion = L1Loss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))

@@ -59,22 +59,6 @@ class RelativeL1Loss(nn.Module):
         return loss
 
 
-class L1Loss(nn.Module):
-    def __init__(self, eps=1e-6):
-        super().__init__()
-        self.eps = eps
-
-    def forward(self, pred, target, mask):
-        """
-        pred, target: (B,H,W) hoặc (H,W)
-        mask: Boolean tensor same shape
-        """
-        valid_mask = mask.detach()
-        diff = target - pred
-        diff = diff[valid_mask]
-        self.loss = diff.abs().mean()
-        return self.loss
-
     
 class DepthLoss(nn.Module):
     def __init__(self):
@@ -284,3 +268,63 @@ class CustomLoss(nn.Module):
         
         loss = first_term - second_term
         return loss
+
+
+
+class L1Loss(nn.Module):
+    def __init__(self, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred, target, mask):
+        """
+        pred, target: (B,H,W) hoặc (H,W)
+        mask: Boolean tensor same shape
+        """
+        valid_mask = mask.detach()
+        diff = target - pred
+        diff = diff[valid_mask]
+        self.loss = diff.abs().mean()
+        return self.loss
+
+
+import kornia
+
+@torch.jit.script
+def pyrdown(input_tensor: torch.Tensor, num_scales: int = 4):
+    """ Creates a downscale pyramid for the input tensor. """
+    output = [input_tensor]
+    for _ in range(num_scales - 1):
+        down = kornia.filters.blur_pool2d(output[-1], 3)
+        output.append(down)
+    return output
+
+class MSGradientLoss(nn.Module):
+    def __init__(self, num_scales: int = 4):
+        super().__init__()
+
+        self.num_scales = num_scales
+
+    def forward(self, depth_pred, depth_gt):
+        depth_pred_pyr = pyrdown(depth_pred, self.num_scales)
+        depth_gtn_pyr = pyrdown(depth_gt, self.num_scales)
+
+        grad_loss = torch.tensor(0, dtype=depth_gt.dtype, device=depth_gt.device)
+        for depth_pred_down, depth_gtn_down in zip(depth_pred_pyr, depth_gtn_pyr):
+
+            depth_gtn_grad = kornia.filters.spatial_gradient(depth_gtn_down)
+            # mask_down_b = depth_gtn_grad.isfinite().all(dim=1, keepdim=True)
+            # Mask where depth_gt_grad is not zero
+            mask_not_zero = depth_gtn_grad != 0
+            # Making sure the mask includes all channels
+            mask_down_b = mask_not_zero.all(dim=1, keepdim=True)
+
+            depth_pred_grad = kornia.filters.spatial_gradient(
+                                    depth_pred_down).masked_select(mask_down_b)
+
+            grad_error = torch.abs(depth_pred_grad - 
+                                    depth_gtn_grad.masked_select(mask_down_b))
+            grad_loss += torch.mean(grad_error)
+
+        return grad_loss
+    
