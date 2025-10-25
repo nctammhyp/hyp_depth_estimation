@@ -26,7 +26,7 @@ import torch.optim as optim
 
 
 import utils, loss_func
-from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss, CustomLoss, MSGradientLoss
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss
 from torch.optim.lr_scheduler import LambdaLR
 
 import math
