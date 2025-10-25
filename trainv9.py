@@ -347,8 +347,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4)
-    # optim = torch.optim.Adam(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
     # optim = torch.optim.AdamW(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
 
 
@@ -464,8 +464,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/24/best_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/24/best_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/25/best_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/25/best_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
@@ -645,4 +645,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/25")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/26")
