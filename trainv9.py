@@ -348,8 +348,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #   )
 
     # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
-    optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
-    # optim = torch.optim.AdamW(model.parameters(), lr = 0.01 ,weight_decay=1e-4)
+    # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
+    optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=1e-4)
 
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
@@ -464,8 +464,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/25/best_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/25/best_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/24/best_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/24/best_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
