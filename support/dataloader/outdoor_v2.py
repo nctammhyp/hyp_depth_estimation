@@ -28,7 +28,7 @@ def depth_to_norm_log(depth, d_min=0.001, d_max=1000.0):
     return np.clip(s, 0.0, 1.0).astype(np.float32)
 
 
-def normalize_depth_quantile_np(depth, mask=None, q=(0.02, 0.98), clip_range=(0.01, 1.0)):
+def normalize_depth_quantile_np(depth, mask=None, q=(0.02, 0.98), clip_range=(0.0001, 1.0)):
     """
     Chuẩn hóa bản đồ độ sâu theo quantile (loại bỏ outlier) — dùng NumPy.
     
