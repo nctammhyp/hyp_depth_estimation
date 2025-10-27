@@ -28,6 +28,36 @@ def depth_to_norm_log(depth, d_min=0.001, d_max=1000.0):
     return np.clip(s, 0.0, 1.0).astype(np.float32)
 
 
+def normalize_depth_quantile_np(depth, mask=None, q=(0.02, 0.98), clip_range=(0.01, 1.0)):
+    """
+    Chuẩn hóa bản đồ độ sâu theo quantile (loại bỏ outlier) — dùng NumPy.
+    
+    Args:
+        depth (np.ndarray): Bản đồ độ sâu (H x W) hoặc (B x H x W)
+        mask (np.ndarray, optional): Mặt nạ vùng hợp lệ (cùng shape với depth)
+        q (tuple): Tỉ lệ quantile (min, max), ví dụ (0.02, 0.98)
+        clip_range (tuple): Ngưỡng cắt sau chuẩn hóa, mặc định (0.01, 1.0)
+    
+    Returns:
+        np.ndarray: Depth chuẩn hóa trong khoảng [clip_range[0], clip_range[1]]
+    """
+    if mask is not None:
+        valid_depth = depth[mask]
+    else:
+        valid_depth = depth
+
+    # Tính quantile (loại bỏ outlier)
+    _min, _max = np.quantile(valid_depth, q)
+
+    # Chuẩn hóa tuyến tính
+    depth_norm = (depth - _min) / (_max - _min)
+
+    # Giới hạn trong clip_range
+    depth_norm = np.clip(depth_norm, clip_range[0], clip_range[1])
+
+    return depth_norm.astype(np.float32)
+
+
 # def depth_to_inv_norm(depth, d_min=0.001, d_max=600.0):
 #     """
 #     Normalize inverse depth (1/depth) linearly to [0, 1],
@@ -62,7 +92,8 @@ class DepthDataset(Dataset):
         return len(self.paths)
     
     def normalize_depth(self, depth):
-        return depth_to_norm_log(depth)
+        # return depth_to_norm_log(depth)
+        return normalize_depth_quantile_np(depth)
 
     def __getitem__(self, index):
         try:
