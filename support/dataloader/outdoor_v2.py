@@ -92,8 +92,8 @@ class DepthDataset(Dataset):
         return len(self.paths)
     
     def normalize_depth(self, depth):
-        # return depth_to_norm_log(depth)
-        return normalize_depth_quantile_np(depth)
+        return depth_to_norm_log(depth)
+        # return normalize_depth_quantile_np(depth)
 
     def __getitem__(self, index):
         try:
