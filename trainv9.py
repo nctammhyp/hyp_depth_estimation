@@ -132,8 +132,8 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    # loss = criterion(pred, target, mask)
-    loss = criterion(pred, target)
+    loss = criterion(pred, target, mask)
+    # loss = criterion(pred, target)
 
 
     return {
@@ -512,9 +512,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
 
-            # loss = criterion(pred,depth,mask)
+            loss = criterion(pred,depth,mask)
 
-            loss = criterion(pred, depth)
+            # loss = criterion(pred, depth)
 
             loss.backward()
             optim.step()
