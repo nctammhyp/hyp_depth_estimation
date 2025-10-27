@@ -289,3 +289,24 @@ class L1Loss(nn.Module):
         diff = diff[valid_mask]
         self.loss = diff.abs().mean()
         return self.loss
+    
+class L1NormLoss(nn.Module):
+    def __init__(self):
+        super(L1NormLoss, self).__init__()
+
+    def forward(self, target, pred, mask=None):
+        assert pred.dim() == target.dim(), "inconsistent dimensions"
+
+        valid_mask = (target > 0).detach()
+
+        if mask is not None:
+            valid_mask *= mask.detach()
+
+        _min, _max = torch.quantile(target[mask].cpu().detach(), torch.tensor([0.02, 1 - 0.02]),)
+        gt_depth_norm = (target - _min) / (_max - _min)
+        gt_depth_norm = torch.clip(gt_depth_norm, 0.01, 1.0)
+
+        diff = gt_depth_norm - pred
+        diff = diff[valid_mask]
+        loss = diff.abs().mean()
+        return loss
