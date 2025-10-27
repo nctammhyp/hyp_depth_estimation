@@ -132,7 +132,7 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    loss = criterion(pred, target, mask)
+    # loss = criterion(pred, target, mask)
     # loss = criterion(pred, target)
 
 
@@ -141,7 +141,7 @@ def eval_depth(pred, target, criterion):
         'abs_rel': abs_rel.detach(),
         'rmse': rmse.detach(),
         'mae': mae.detach(),
-        'loss': loss.detach()
+        # 'loss': loss.detach()
     }
 
 
