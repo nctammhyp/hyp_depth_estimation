@@ -129,8 +129,8 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    loss = criterion(pred, target, mask)
-    # loss = criterion(pred, target)
+    # loss = criterion(pred, target, mask)
+    loss = criterion(pred, target)
 
 
     return {
@@ -393,7 +393,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
+    criterion = MSGradientLoss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
@@ -507,9 +508,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
 
-            loss = criterion(pred,depth,mask)
+            # loss = criterion(pred,depth,mask)
 
-            # loss = criterion(pred, depth)
+            loss = criterion(pred, depth)
 
             loss.backward()
             optim.step()
