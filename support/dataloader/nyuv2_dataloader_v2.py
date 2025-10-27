@@ -15,8 +15,8 @@ def h5_loader(path):
     h5f = h5py.File(path, "r")
     rgb = np.array(h5f["rgb"])
     rgb = np.transpose(rgb, (1, 2, 0))  # (H, W, C)
-    depth = np.array(h5f["anythingv2l_322_196"])
-    # depth = np.array(h5f['depth'])
+    # depth = np.array(h5f["anythingv2l_322_196"])
+    depth = np.array(h5f['depth'])
     h5f.close()
     return rgb, depth
 
@@ -111,8 +111,8 @@ def collate_fn(batch):
 
 def create_data_loaders(batch_size=8, subset=False):
     print("Creating dataset... patience.")
-    base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
-    # base_dir = "/content/nyuv2/content/nyuv2/nyuv2_partial_406"
+    # base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
+    base_dir = r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\nyuv2_partial_406"
 
     train_path = os.path.join(base_dir, "train")
     val_path = os.path.join(base_dir, "val")
@@ -127,13 +127,12 @@ def create_data_loaders(batch_size=8, subset=False):
 
     # args.train_set = train_dataset
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True,
-        num_workers=8, pin_memory=True,
+        train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True,
         worker_init_fn=lambda work_id: np.random.seed(work_id)
     )
 
     # args.val_set = val_dataset
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, pin_memory=True)
 
     print("Finish loading datasets")
 
