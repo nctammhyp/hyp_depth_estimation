@@ -359,9 +359,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
     # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
-    optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=1e-4)
+    # optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=1e-4)
 
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
@@ -553,12 +553,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
                 # print(depth)
 
-                # ----------------------------
-                # 🔁 Reverse normalization
-                # ----------------------------
-                d_min, d_max = 0.001, 1000.0
-                pred = denorm_depth_torch(pred, d_min, d_max)
-                depth = denorm_depth_torch(depth, d_min, d_max)
+                # # ----------------------------
+                # # 🔁 Reverse normalization
+                # # ----------------------------
+                # d_min, d_max = 0.001, 1000.0
+                # pred = denorm_depth_torch(pred, d_min, d_max)
+                # depth = denorm_depth_torch(depth, d_min, d_max)
 
 
                 mask = (depth >= 0.001)

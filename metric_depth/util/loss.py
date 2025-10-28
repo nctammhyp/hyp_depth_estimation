@@ -555,6 +555,7 @@ class CompositeLoss(nn.Module):
         super(CompositeLoss, self).__init__()
         self.l1_loss = L1Loss(loss_weight=l1_weight)
         self.grad_loss = GradientLoss_Li(scale_num=scale_num, loss_weight=grad_weight, data_type=data_type)
+        self.siglog = SiLogLoss()
 
     def forward(self, target, prediction, mask=None):
         # L1 Loss
@@ -564,8 +565,9 @@ class CompositeLoss(nn.Module):
         if mask is None:
             mask = (target > 0).detach()
         grad = self.grad_loss(target, prediction, mask)
+        silog = self.siglog(target, prediction, mask)
 
-        total_loss = l1 + 0.2*grad
+        total_loss = l1 + 0.2*grad + silog 
         return total_loss
 
     
