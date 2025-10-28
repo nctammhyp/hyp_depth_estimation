@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
-from depth_model.fdepth_resnet_v2 import FastDepthV2
-# from depth_model.depth_mobile import FastDepthV2, weights_init
+# from depth_model.fdepth_resnet_v2 import FastDepthV2
+from depth_model.depth_mobile import FastDepthV2, weights_init
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -132,9 +132,9 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    # loss = criterion(pred, target, mask)
+    loss = criterion(pred, target, mask)
     # loss = criterion(pred, target)
-    loss = torch.tensor(0.0)
+    # loss = torch.tensor(0.0)
 
 
     return {
@@ -339,8 +339,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     model = FastDepthV2()
 
-    # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
-    # model.decoder.apply(weights_init)
+    model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    model.decoder.apply(weights_init)
     
     
     model.to(device)
