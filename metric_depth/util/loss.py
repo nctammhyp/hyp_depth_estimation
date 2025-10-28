@@ -550,6 +550,25 @@ class GradientLoss_Li(nn.Module):
             # raise RuntimeError(f'VNL error, {loss}')
         return loss * self.loss_weight
     
+class CompositeLoss(nn.Module):
+    def __init__(self, l1_weight=1.0, grad_weight=1.0, scale_num=4, data_type=['lidar', 'stereo']):
+        super(CompositeLoss, self).__init__()
+        self.l1_loss = L1Loss(loss_weight=l1_weight)
+        self.grad_loss = GradientLoss_Li(scale_num=scale_num, loss_weight=grad_weight, data_type=data_type)
+
+    def forward(self, target, prediction, mask=None):
+        # L1 Loss
+        l1 = self.l1_loss(target, prediction, mask)
+
+        # Gradient Loss
+        if mask is None:
+            mask = (target > 0).detach()
+        grad = self.grad_loss(target, prediction, mask)
+
+        total_loss = l1 + 0.2*grad
+        return total_loss
+
+    
 class EPNLoss(nn.Module):
     """
     Hieratical depth spatial normalization loss for Gaussian sampling.
