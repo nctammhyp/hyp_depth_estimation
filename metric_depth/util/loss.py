@@ -597,9 +597,9 @@ class CompositeLoss(nn.Module):
         grad = self.grad_loss(target, prediction, mask)
         # silog = self.siglog(target, prediction, mask)
 
-        grad_target, grad_pred = self.imgrad_yx(target), self.imgrad_yx(prediction)
+        # grad_target, grad_pred = self.imgrad_yx(target), self.imgrad_yx(prediction)
 
-        total_loss = l1 + 0.2*grad + 0.2*self.NormLoss(grad_pred, grad_target)
+        total_loss = l1 + 0.2*grad
 
         return total_loss
 
