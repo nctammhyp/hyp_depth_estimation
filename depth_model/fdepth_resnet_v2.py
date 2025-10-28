@@ -8,10 +8,13 @@ import torch.nn.functional as F
 import torchvision.models
 import math,time
 
-# import resnet18
-from depth_model import resnet18
+import resnet18
+# from depth_model import resnet18
 
-import depth_model.feature_fusion_module as ffm
+# import depth_model.feature_fusion_module as ffm
+
+import feature_fusion_module as ffm
+
 
 def ConvBlock(in_channels,out_channels,kernel_size,stride,padding):
   return nn.Sequential(
@@ -72,6 +75,8 @@ class FastDepthV2(nn.Module):
     self.max_depth = max_depth
   def forward(self,x):
     # print("debug 1:", x.min().item(), x.max().item(), "NaN:", torch.isnan(x).any().item())
+    # print(f"fea 0: {x.size()}")
+
     x = self.encoder[0](x)
     # print(f"fea 1: {x.size()}")
 
@@ -126,6 +131,7 @@ class FastDepthV2(nn.Module):
     if self.use_ffm:
       x = self.ffm_3(x, layer3)
     else:
+      layer3 = F.interpolate(layer3, size=x.shape[2:], mode='bilinear', align_corners=False)
       x = x + layer3
 
     # print(f"dec 2: {x.size()}")
@@ -139,6 +145,7 @@ class FastDepthV2(nn.Module):
     if self.use_ffm:
       x = self.ffm_2(x, layer2)
     else:
+      layer2 = F.interpolate(layer2, size=x.shape[2:], mode='bilinear', align_corners=False)
       x = x + layer2
     # x = x + layer2
 
@@ -151,6 +158,7 @@ class FastDepthV2(nn.Module):
     if self.use_ffm:
       x = self.ffm_1(x, layer1)
     else:
+      layer1 = F.interpolate(layer1, size=x.shape[2:], mode='bilinear', align_corners=False)
       x = x + layer1
 
     x= F.interpolate(self.decoder.conv5(x), scale_factor=2, mode='nearest')
@@ -169,6 +177,8 @@ class FastDepthV2(nn.Module):
     x = self.decoder.output(x)          # output raw logits
     # x = torch.sigmoid(x) * self.max_depth  # scale về [0, max_depth]
     # x = F.relu(x)
+    x = F.interpolate(x, size=(322, 196), mode='bilinear', align_corners=False)
+
   
     return x
   
@@ -178,6 +188,6 @@ if __name__ == "__main__":
   print("Pretrained ImageNet weights đã được load thành công!")
 
   # 168, 126
-  dummy_input = torch.randn(1, 3, 224, 224)
+  dummy_input = torch.randn(1, 3, 322, 196)
   output = model(dummy_input)
   print("Output shape:", output.shape)  # [1, 1000]
