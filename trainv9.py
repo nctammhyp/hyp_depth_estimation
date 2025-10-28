@@ -399,7 +399,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # criterion = RelativeL1Loss()
     # criterion = L1Loss()
     # criterion = loss_fn.L1NormLoss()
-    criterion = loss_fn.SSILoss()
+    criterion = loss_fn.EPNLoss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
