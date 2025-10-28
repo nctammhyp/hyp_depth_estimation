@@ -557,6 +557,36 @@ class CompositeLoss(nn.Module):
         self.grad_loss = GradientLoss_Li(scale_num=scale_num, loss_weight=grad_weight, data_type=data_type)
         self.siglog = SiLogLoss()
 
+    def imgrad_yx(self,img):
+        N,C,_,_ = img.size()
+        grad_y, grad_x = self.imgrad(img)
+        return torch.cat((grad_y.view(N,C,-1), grad_x.view(N,C,-1)), dim=1)
+    
+    def imgrad(self,img):
+        img = torch.mean(img, 1, True)
+        fx = np.array([[1,0,-1],[2,0,-2],[1,0,-1]])
+        conv1 = nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1, bias=False)
+        weight = torch.from_numpy(fx).float().unsqueeze(0).unsqueeze(0)
+        if img.is_cuda:
+            weight = weight.cuda()
+        conv1.weight = nn.Parameter(weight)
+        grad_x = conv1(img)
+
+        fy = np.array([[1,2,1],[0,0,0],[-1,-2,-1]])
+        conv2 = nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1, bias=False)
+        weight = torch.from_numpy(fy).float().unsqueeze(0).unsqueeze(0)
+        if img.is_cuda:
+            weight = weight.cuda()
+        conv2.weight = nn.Parameter(weight)
+        grad_y = conv2(img)
+        return grad_y, grad_x
+
+    def NormLoss(self, grad_target, grad_pred):
+        prod = ( grad_pred[:,:,None,:] @ grad_target[:,:,:,None] ).squeeze(-1).squeeze(-1)
+        pred_norm = torch.sqrt( torch.sum( grad_pred**2, dim=-1 ) )
+        target_norm = torch.sqrt( torch.sum( grad_target**2, dim=-1 ) ) 
+        return 1 - torch.mean( prod/(pred_norm*target_norm) )
+
     def forward(self, target, prediction, mask=None):
         # L1 Loss
         l1 = self.l1_loss(target, prediction, mask)
@@ -565,9 +595,12 @@ class CompositeLoss(nn.Module):
         if mask is None:
             mask = (target > 0).detach()
         grad = self.grad_loss(target, prediction, mask)
-        silog = self.siglog(target, prediction, mask)
+        # silog = self.siglog(target, prediction, mask)
 
-        total_loss = l1 + 0.2*grad + silog 
+        grad_target, grad_pred = self.imgrad_yx(target), self.imgrad_yx(prediction)
+
+        total_loss = l1 + 0.2*grad + 0.2*self.NormLoss(grad_pred, grad_target)
+
         return total_loss
 
     
