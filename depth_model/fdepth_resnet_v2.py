@@ -8,12 +8,12 @@ import torch.nn.functional as F
 import torchvision.models
 import math,time
 
-import resnet18
-# from depth_model import resnet18
+# import resnet18
+from depth_model import resnet18
 
-# import depth_model.feature_fusion_module as ffm
+import depth_model.feature_fusion_module as ffm
 
-import feature_fusion_module as ffm
+# import feature_fusion_module as ffm
 
 
 def ConvBlock(in_channels,out_channels,kernel_size,stride,padding):
