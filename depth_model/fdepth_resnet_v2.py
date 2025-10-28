@@ -177,7 +177,7 @@ class FastDepthV2(nn.Module):
     x = self.decoder.output(x)          # output raw logits
     # x = torch.sigmoid(x) * self.max_depth  # scale về [0, max_depth]
     # x = F.relu(x)
-    x = F.interpolate(x, size=(322, 196), mode='bilinear', align_corners=False)
+    x = F.interpolate(x, size=(196, 322), mode='bilinear', align_corners=False)
 
   
     return x
