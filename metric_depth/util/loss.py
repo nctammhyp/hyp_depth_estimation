@@ -599,7 +599,7 @@ class CompositeLoss(nn.Module):
 
         # grad_target, grad_pred = self.imgrad_yx(target), self.imgrad_yx(prediction)
 
-        total_loss = l1 + 0.2*grad
+        total_loss = 0.7*l1 + 0.3*grad 
 
         return total_loss
 
