@@ -509,9 +509,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
             mask = (depth >= 0.00001)
 
-            # print("pred shape:", pred.shape)
-            # print("target shape:", target.shape)
-            # print("valid_mask shape:", mask.shape)
+            print("pred shape:", pred.shape)
+            print("target shape:", target.shape)
+            print("valid_mask shape:", mask.shape)
 
             loss = criterion(pred,depth,mask)
 
