@@ -319,6 +319,14 @@ def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
 #     for param_group in optimizer.param_groups:
 #         param_group['lr'] = lr
 
+def denorm_depth_torch(s, d_min=0.001, d_max=1000.0):
+    """
+    Chuyển từ log-normalized depth [0,1] về giá trị depth thật (m)
+    """
+    log_d_min, log_d_max = np.log(d_min), np.log(d_max)
+    depth = torch.exp(log_d_max - s * (log_d_max - log_d_min))
+    return torch.clamp(depth, d_min, d_max)
+
 
 def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # params
@@ -549,10 +557,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # 🔁 Reverse normalization
                 # ----------------------------
                 d_min, d_max = 0.001, 1000.0
-                log_d_min, log_d_max = np.log(d_min), np.log(d_max)
-                # pred ở torch, nên viết bằng torch thay vì numpy
-                pred = torch.exp(log_d_max - pred * (log_d_max - log_d_min))
-                depth = torch.clamp(depth, d_min, d_max)  # để khớp khoảng giá trị
+                pred = denorm_depth_torch(pred, d_min, d_max)
+                depth = denorm_depth_torch(depth, d_min, d_max)
 
 
                 mask = (depth >= 0.001)
