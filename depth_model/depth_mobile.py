@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models
 import math,time
+import depth_model.feature_fusion_module as ffm
 
 
 def DeconvBlock(in_channels,out_channels,kernel_size):
