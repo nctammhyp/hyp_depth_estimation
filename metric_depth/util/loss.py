@@ -556,6 +556,7 @@ class CompositeLoss(nn.Module):
         self.l1_loss = L1Loss(loss_weight=l1_weight)
         self.grad_loss = GradientLoss_Li(scale_num=scale_num, loss_weight=grad_weight, data_type=data_type)
         self.siglog = SiLogLoss()
+        self.berhuloss = BerhuLoss()
 
     def imgrad_yx(self,img):
         N,C,_,_ = img.size()
@@ -598,8 +599,9 @@ class CompositeLoss(nn.Module):
         # silog = self.siglog(target, prediction, mask)
 
         # grad_target, grad_pred = self.imgrad_yx(target), self.imgrad_yx(prediction)
+        berhuloss = self.berhuloss(target, prediction, mask)
 
-        total_loss = 0.7*l1 + 0.3*grad 
+        total_loss = l1 + 0.5*grad + 0.5*berhuloss
 
         return total_loss
 
