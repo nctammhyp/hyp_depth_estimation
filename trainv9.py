@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
-# from depth_model.fdepth_resnet_v2 import FastDepthV2
-from depth_model.depth_mobile import FastDepthV2, weights_init
+from depth_model.fdepth_resnet_v2 import FastDepthV2
+# from depth_model.depth_mobile import FastDepthV2, weights_init
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -339,8 +339,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     model = FastDepthV2()
 
-    model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
-    model.decoder.apply(weights_init)
+    # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    # model.decoder.apply(weights_init)
     
     
     model.to(device)
@@ -392,14 +392,14 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # criterion = DepthLoss_custom()
 
-    # criterion = SiLogLoss() # author's loss
+    criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
     # criterion = L1Loss()
     # criterion = loss_fn.L1NormLoss()
-    criterion = loss_fn.EPNLoss()
+    # criterion = loss_fn.EPNLoss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
 
     # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
