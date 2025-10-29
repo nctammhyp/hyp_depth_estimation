@@ -138,7 +138,7 @@ def inference_sample(model, state_path, device, model_type="best"):
 #  🧠 Training One Fold
 # ============================================================
 
-def train_single_fold(device, train_loader, val_loader, fold_path, num_epochs=30, learning_rate=0.01):
+def train_single_fold(device, train_loader, val_loader, fold_path, num_epochs=20, learning_rate=0.01):
     model = FastDepthV2(training=True).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=1e-4)
     criterion = L1Loss()
@@ -192,6 +192,21 @@ def train_single_fold(device, train_loader, val_loader, fold_path, num_epochs=30
 
     return history["val_metrics"][-1]
 
+def evaluate_fold(model, val_loader, device, criterion):
+    model.eval()
+    metrics = {'d1': 0, 'abs_rel': 0, 'rmse': 0, 'mae': 0, 'loss': 0}
+    with torch.no_grad():
+        for imgs, depths in tqdm(val_loader, desc="[Eval] Validation"):
+            imgs, depths = imgs.to(device), depths.to(device)
+            pred = model(imgs)
+            mask = (depths >= 0.0001)
+            r = eval_depth(pred[mask], depths[mask], criterion)
+            for k in metrics:
+                metrics[k] += r[k]
+    for k in metrics:
+        metrics[k] = round((metrics[k] / len(val_loader)).item(), 4)
+    return metrics
+
 
 # ============================================================
 #  🔁 K-Fold Cross Validation
@@ -204,7 +219,7 @@ def train_kfold(device="cuda:0", n_splits=5, state_path="./checkpoints_kfold"):
     dataset_path = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2"
     train_dataset, val_dataset = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
 
-    full_dataset = ConcatDataset([train_dataset, val_dataset])
+    full_dataset = train_dataset
 
     print(f"[INFO] Dataset path: {dataset_path}")
     print(f"[INFO] Total samples in dataset: {len(full_dataset)}")
@@ -225,7 +240,27 @@ def train_kfold(device="cuda:0", n_splits=5, state_path="./checkpoints_kfold"):
         val_loader = DataLoader(val_subset, batch_size=8, shuffle=False, num_workers=8, pin_memory=True)
 
         fold_metrics = train_single_fold(device, train_loader, val_loader, fold_path)
+
         all_metrics.append(fold_metrics)
+
+
+        # === Evaluate on global val_dataset ===
+        print(f"\n[INFO] Evaluating fold {fold+1} on global validation dataset...")
+        best_ckpt = os.path.join(fold_path, "best_checkpoint.pth")
+        model = FastDepthV2(training=False).to(device)
+        criterion = L1Loss()
+
+        if os.path.exists(best_ckpt):
+            ckpt = torch.load(best_ckpt, map_location=device)
+            model.load_state_dict(ckpt["model"])
+
+            global_val_loader = DataLoader(
+                val_dataset, batch_size=8, shuffle=False,
+                num_workers=8, pin_memory=True
+            )
+            val_metrics = evaluate_fold(model, global_val_loader, device, criterion)
+            print(f"[Fold {fold+1}] Evaluation on val_dataset: {val_metrics}")
+
 
     # Average metrics
     avg_metrics = {}
@@ -248,6 +283,6 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     train_kfold(
         device=device,
-        n_splits=10,
+        n_splits=7,
         state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/kfold"
     )
