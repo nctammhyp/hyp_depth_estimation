@@ -228,7 +228,7 @@ def collate_fn(batch):
     return default_collate(batch)
 
 # ===================== Hàm tạo DataLoader =====================
-def create_data_loaders(data_root, batch_size=64, size=(160, 128)):
+def create_data_loaders(data_root, batch_size=8, size=(160, 128)):
 
     train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
     val_paths   = get_image_label_pairs(os.path.join(data_root, "val"))
