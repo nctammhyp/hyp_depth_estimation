@@ -120,7 +120,7 @@ class DepthDataset(Dataset):
                 rgb, depth = rgb / 255.0, depth
 
 
-            depth = self.normalize_depth(depth)
+            # depth = self.normalize_depth(depth)
 
             # Chuyển sang tensor
             rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]

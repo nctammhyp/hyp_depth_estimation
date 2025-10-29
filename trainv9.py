@@ -18,7 +18,9 @@ import matplotlib.pyplot as plt
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
 # from depth_model.fdepth_resnet_v2 import FastDepthV2
-from depth_model.depth_mobile import FastDepthV2, weights_init
+from depth_model.fdepth_resnet_v3 import FastDepthV2
+
+# from depth_model.depth_mobile import FastDepthV2, weights_init
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -178,7 +180,7 @@ def inference_sample(model, state_path, device, model_type="last"):
     if not os.path.exists(ckpt_path):
         print(f"Checkpoint file not found: {ckpt_path}")
     else:
-        
+        model = FastDepthV2(training=False)
         print(f"*****      infer: {ckpt_path}    ******")
         checkpoint = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(checkpoint["model"])
@@ -345,10 +347,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
 
-    model = FastDepthV2()
+    # model = FastDepthV2()
+    model = FastDepthV2(training=True)
 
-    model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
-    model.decoder.apply(weights_init)
+
+    # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    # model.decoder.apply(weights_init)
     
     
     model.to(device)
@@ -359,12 +363,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
     # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
     # optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=1e-4)
 
 
-    optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
+    # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
 
     # optim = torch.optim.ASGD(
     #     model.parameters(),
@@ -509,19 +513,26 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             img, depth = input.to(device), target.to(device)
 
             optim.zero_grad()
-            pred = model(img)
+            # pred = model(img)
+            pred, disp1, disp2, disp3 = model(img)
 
 
             # mask = (depth > 1e-3) 
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            mask = (depth >= 0.001)
+            mask = (depth >= 0.0001)
+
 
             # print("pred shape:", pred.shape)
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
 
-            loss = criterion(pred,depth,mask)
+            loss1 = criterion(pred,depth,mask)
+            loss2 = criterion(disp1,depth,mask)
+            loss3 = criterion(disp2,depth,mask)
+            loss4 = criterion(disp3,depth,mask)
+
+            loss = loss1 + loss2 + loss3 + loss4
 
             # loss = criterion(pred, depth)
 
@@ -543,7 +554,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             for i , (input,target) in tqdm(enumerate(val_loader)):
                 img, depth = input.to(device), target.to(device)
 
-                pred = model(img)
+                # pred = model(img)
+                pred, disp1, disp2, disp3 = model(img)
 
                 # test_loss += criterion('l1',pred, depth).item()
                 # pred = pred.squeeze(1).squeeze(0)

@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import torchvision.models
 import math,time
 
-import resnet18
-# from depth_model import resnet18
+# import resnet18
+from depth_model import resnet18
 
 def ConvBlock(in_channels,out_channels,kernel_size,stride,padding):
   return nn.Sequential(
@@ -120,7 +120,7 @@ class FastDepthV2(nn.Module):
     x = F.interpolate(self.decoder.conv2(x), scale_factor=2, mode='nearest')
     # print(f"size after: {x.size()}", flush=True) # result: torch.Size([1, 128, 20, 16])
     # print(f"size layer: {layer3.size()}", flush=True) # result: torch.Size([1, 128, 20, 16])
-    # layer3 = F.interpolate(layer3, size=x.shape[2:], mode='bilinear', align_corners=False)
+    layer3 = F.interpolate(layer3, size=x.shape[2:], mode='bilinear', align_corners=False)
 
 
     x = x + layer3
@@ -130,7 +130,7 @@ class FastDepthV2(nn.Module):
     disp1 = x
 
     x = F.interpolate(self.decoder.conv3(x), scale_factor=2, mode='nearest')
-    # layer2 = F.interpolate(layer2, size=x.shape[2:], mode='bilinear', align_corners=False)
+    layer2 = F.interpolate(layer2, size=x.shape[2:], mode='bilinear', align_corners=False)
 
 
     # print(f"dec 3: {x.size()}")
@@ -140,7 +140,7 @@ class FastDepthV2(nn.Module):
     disp2 = x
 
     x= F.interpolate(self.decoder.conv4(x), scale_factor=2, mode='nearest')
-    # layer1 = F.interpolate(layer1, size=x.shape[2:], mode='bilinear', align_corners=False)
+    layer1 = F.interpolate(layer1, size=x.shape[2:], mode='bilinear', align_corners=False)
 
     # print(f"dec 4: {x.size()}")
     
@@ -181,7 +181,9 @@ class FastDepthV2(nn.Module):
 
     x = self.decoder.output(x)          # output raw logits
     # x = torch.sigmoid(x) * self.max_depth  # scale về [0, max_depth]
-    x = F.relu(x)
+    # x = F.relu(x)
+    x = F.interpolate(x, size=(196, 322), mode='bilinear', align_corners=False)
+
 
 
     if self.training is True:
@@ -204,6 +206,6 @@ if __name__ == "__main__":
   print("Pretrained ImageNet weights đã được load thành công!")
 
   # 168, 126
-  dummy_input = torch.randn(1, 3, 224, 224)
+  dummy_input = torch.randn(1, 3, 322, 196)
   output, disp1, disp2, disp3 = model(dummy_input)
   print("Output shape:", output.shape)  # [1, 1000]
