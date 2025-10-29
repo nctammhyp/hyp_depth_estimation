@@ -148,7 +148,7 @@ def train_single_fold(device, train_loader, val_loader, fold_path, num_epochs=20
 
     for epoch in range(num_epochs):
         model.train()
-        adjust_learning_rate(optimizer, epoch, learning_rate)
+        # adjust_learning_rate(optimizer, epoch, learning_rate)
         total_loss = 0
 
         for imgs, depths in tqdm(train_loader, desc=f"[Fold Train] Epoch {epoch+1}/{num_epochs}"):
