@@ -254,15 +254,16 @@ def create_data_loaders(data_root, batch_size=8, size=(160, 128)):
     train_dataset = DepthDataset(train_paths, mode="train", size=size)
     val_dataset   = DepthDataset(val_paths, mode="val", size=size)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size,
-                              shuffle=True, num_workers=8,
-                              pin_memory=True, drop_last=True)
+    # train_loader = DataLoader(train_dataset, batch_size=batch_size,
+    #                           shuffle=True, num_workers=8,
+    #                           pin_memory=True, drop_last=True)
 
-    val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                            shuffle=False, num_workers=8,
-                            pin_memory=True)
+    # val_loader = DataLoader(val_dataset, batch_size=batch_size,
+    #                         shuffle=False, num_workers=8,
+    #                         pin_memory=True)
 
-    return train_loader, val_loader
+    # return train_loader, val_loader
+    return train_dataset, val_dataset
 
 
 # ===================== Example =====================
