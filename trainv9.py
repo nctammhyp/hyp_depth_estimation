@@ -180,7 +180,7 @@ def inference_sample(model, state_path, device, model_type="last"):
     if not os.path.exists(ckpt_path):
         print(f"Checkpoint file not found: {ckpt_path}")
     else:
-        model = FastDepthV2(training=False)
+        # model = FastDepthV2(training=False)
         print(f"*****      infer: {ckpt_path}    ******")
         checkpoint = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(checkpoint["model"])
@@ -573,7 +573,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # depth = denorm_depth_torch(depth, d_min, d_max)
 
 
-                mask = (depth >= 0) & (depth <= 1)
+                mask = (depth >= 0)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 

@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import torchvision.models
 import math,time
 
-# import resnet18
-from depth_model import resnet18
+import resnet18
+# from depth_model import resnet18
 
 def ConvBlock(in_channels,out_channels,kernel_size,stride,padding):
   return nn.Sequential(
@@ -204,8 +204,10 @@ if __name__ == "__main__":
   # Tạo model custom từ scratch
   model = FastDepthV2(training=True)
   print("Pretrained ImageNet weights đã được load thành công!")
+  model.eval()
 
   # 168, 126
   dummy_input = torch.randn(1, 3, 322, 196)
-  output, disp1, disp2, disp3 = model(dummy_input)
+  # output, disp1, disp2, disp3 = model(dummy_input)
+  output = model(dummy_input)
   print("Output shape:", output.shape)  # [1, 1000]
