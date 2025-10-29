@@ -554,8 +554,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             for i , (input,target) in tqdm(enumerate(val_loader)):
                 img, depth = input.to(device), target.to(device)
 
-                # pred = model(img)
-                pred, disp1, disp2, disp3 = model(img)
+                pred = model(img)
+                # pred, disp1, disp2, disp3 = model(img)
 
                 # test_loss += criterion('l1',pred, depth).item()
                 # pred = pred.squeeze(1).squeeze(0)
