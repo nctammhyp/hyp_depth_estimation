@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import torchvision.models
 import math,time
 
-import resnet18
-# from depth_model import resnet18
+# import resnet18
+from depth_model import resnet18
 
 def ConvBlock(in_channels,out_channels,kernel_size,stride,padding):
   return nn.Sequential(
