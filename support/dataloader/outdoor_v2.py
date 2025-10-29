@@ -58,21 +58,21 @@ def normalize_depth_quantile_np(depth, mask=None, q=(0.02, 0.98), clip_range=(0.
     return depth_norm.astype(np.float32)
 
 
-# def depth_to_inv_norm(depth, d_min=0.001, d_max=600.0):
-#     """
-#     Normalize inverse depth (1/depth) linearly to [0, 1],
-#     nhưng KHÔNG clip depth > d_max — để giữ thông tin vùng ngoài.
-#     """
-#     depth = np.maximum(depth, d_min)  # chỉ tránh chia 0
-#     inv_d = 1.0 / depth
+def depth_to_inv_norm(depth, d_min=0.001, d_max=600.0):
+    """
+    Normalize inverse depth (1/depth) linearly to [0, 1],
+    nhưng KHÔNG clip depth > d_max — để giữ thông tin vùng ngoài.
+    """
+    depth = np.maximum(depth, d_min)  # chỉ tránh chia 0
+    inv_d = 1.0 / depth
 
-#     inv_d_min = 1.0 / d_max
-#     inv_d_max = 1.0 / d_min
+    inv_d_min = 1.0 / d_max
+    inv_d_max = 1.0 / d_min
 
-#     # Chuẩn hóa tuyến tính theo khoảng [inv_d_min, inv_d_max]
-#     s = (inv_d - inv_d_min) / (inv_d_max - inv_d_min)
-#     # không clip ngay, chỉ đảm bảo giới hạn
-#     return s.astype(np.float32)
+    # Chuẩn hóa tuyến tính theo khoảng [inv_d_min, inv_d_max]
+    s = (inv_d - inv_d_min) / (inv_d_max - inv_d_min)
+    # không clip ngay, chỉ đảm bảo giới hạn
+    return s.astype(np.float32)
 
 class DepthDataset(Dataset):
     def __init__(self, paths, mode="train", size=(224, 224)):
@@ -92,8 +92,10 @@ class DepthDataset(Dataset):
         return len(self.paths)
     
     def normalize_depth(self, depth):
-        return depth_to_norm_log(depth)
+        # return depth_to_norm_log(depth)
         # return normalize_depth_quantile_np(depth)
+        return depth_to_inv_norm(depth)
+
 
     def __getitem__(self, index):
         try:
@@ -118,7 +120,7 @@ class DepthDataset(Dataset):
                 rgb, depth = rgb / 255.0, depth
 
 
-            # depth = self.normalize_depth(depth)
+            depth = self.normalize_depth(depth)
 
             # Chuyển sang tensor
             rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]
