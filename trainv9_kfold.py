@@ -16,6 +16,8 @@ import torch.nn.functional as F
 from depth_model.fdepth_resnet_v3 import FastDepthV2
 from metric_depth.util.loss import L1Loss
 from support.dataloader import outdoor_v2
+from torch.utils.data import ConcatDataset
+
 
 # ============================================================
 #  🔧 Utility Functions
@@ -174,6 +176,7 @@ def train_single_fold(device, train_loader, val_loader, fold_path, num_epochs=30
             results[k] = round((results[k] / len(val_loader)).item(), 4)
 
         print(f"[Fold Epoch {epoch+1}] TrainLoss={avg_loss:.4f} | RMSE={results['rmse']:.4f}")
+        print(f"val matrics: {results}")
 
         torch.save({"model": model.state_dict(), "epoch": epoch}, f"{fold_path}/last_checkpoint.pth")
 
@@ -199,7 +202,10 @@ def train_kfold(device="cuda:0", n_splits=5, state_path="./checkpoints_kfold"):
 
     # dataset root
     dataset_path = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2"
-    full_dataset, _ = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
+    train_dataset, val_dataset = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
+
+    full_dataset = ConcatDataset([train_dataset, val_dataset])
+
     print(f"[INFO] Dataset path: {dataset_path}")
     print(f"[INFO] Total samples in dataset: {len(full_dataset)}")
 
@@ -242,6 +248,6 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     train_kfold(
         device=device,
-        n_splits=5,
+        n_splits=10,
         state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/kfold"
     )
