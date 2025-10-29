@@ -200,6 +200,9 @@ def train_kfold(device="cuda:0", n_splits=5, state_path="./checkpoints_kfold"):
     # dataset root
     dataset_path = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2"
     full_dataset = outdoor_v2.create_data_loaders(dataset_path, size=(322, 196))
+    print(f"[INFO] Dataset path: {dataset_path}")
+    print(f"[INFO] Total samples in dataset: {len(full_dataset)}")
+
 
     kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     all_metrics = []
