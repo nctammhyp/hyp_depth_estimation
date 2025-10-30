@@ -336,7 +336,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 600
-    learning_rate=5e-6
+    learning_rate=5e-4
     # learning_rate=0.005
 
 
