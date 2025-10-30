@@ -58,7 +58,7 @@ def normalize_depth_quantile_np(depth, mask=None, q=(0.02, 0.98), clip_range=(0.
     return depth_norm.astype(np.float32)
 
 
-def depth_to_inv_norm(depth, d_min=0.001, d_max=600.0):
+def depth_to_inv_norm(depth, d_min=0.001, d_max=400):
     """
     Normalize inverse depth (1/depth) linearly to [0, 1],
     nhưng KHÔNG clip depth > d_max — để giữ thông tin vùng ngoài.
@@ -120,7 +120,7 @@ class DepthDataset(Dataset):
                 rgb, depth = rgb / 255.0, depth
 
 
-            # depth = self.normalize_depth(depth)
+            depth = self.normalize_depth(depth)
 
             # Chuyển sang tensor
             rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]
@@ -263,11 +263,11 @@ def collate_fn(batch):
 # ===================== Hàm tạo DataLoader =====================
 def create_data_loaders(data_root, batch_size=8, size=(160, 128)):
 
-    # train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
-    train_paths = subdataset_get_image_label_pairs(
-        directory=os.path.join(data_root, "train"),
-        selected_scenes=["leak_41", "leak_42"]
-    )
+    train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
+    # train_paths = subdataset_get_image_label_pairs(
+    #     directory=os.path.join(data_root, "train"),
+    #     selected_scenes=["leak_41", "leak_42"]
+    # )
 
 
     val_paths   = get_image_label_pairs(os.path.join(data_root, "val"))

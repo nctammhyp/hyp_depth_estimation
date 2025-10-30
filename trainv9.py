@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
-# from depth_model.fdepth_resnet_v2 import FastDepthV2
-from depth_model.fdepth_resnet_v3 import FastDepthV2
+from depth_model.fdepth_resnet_v2 import FastDepthV2
+# from depth_model.fdepth_resnet_v3 import FastDepthV2
 
 # from depth_model.depth_mobile import FastDepthV2, weights_init
 
@@ -347,8 +347,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
 
-    # model = FastDepthV2()
-    model = FastDepthV2(training=True)
+    model = FastDepthV2()
+    # model = FastDepthV2(training=True)
 
 
     # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
@@ -513,28 +513,28 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             img, depth = input.to(device), target.to(device)
 
             optim.zero_grad()
-            # pred = model(img)
-            pred, disp1, disp2, disp3 = model(img)
+            pred = model(img)
+            # pred, disp1, disp2, disp3 = model(img)
 
 
             # mask = (depth > 1e-3) 
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            mask = (depth >= 0.0001)
+            mask = (depth > 0.001) & (depth < 400)
 
 
             # print("pred shape:", pred.shape)
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
 
-            loss1 = criterion(pred,depth,mask)
-            loss2 = criterion(disp1,depth,mask)
-            loss3 = criterion(disp2,depth,mask)
-            loss4 = criterion(disp3,depth,mask)
+            # loss1 = criterion(pred,depth,mask)
+            # loss2 = criterion(disp1,depth,mask)
+            # loss3 = criterion(disp2,depth,mask)
+            # loss4 = criterion(disp3,depth,mask)
 
-            loss = loss1 + loss2 + loss3 + loss4
+            # loss = loss1 + loss2 + loss3 + loss4
 
-            # loss = criterion(pred,depth,mask)
+            loss = criterion(pred,depth,mask)
             # loss = criterion(pred, depth)
 
             loss.backward()
