@@ -336,7 +336,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 600
-    learning_rate=5e-4
+    learning_rate=0.01
     # learning_rate=0.005
 
 
@@ -574,7 +574,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # depth = denorm_depth_torch(depth, d_min, d_max)
 
 
-                mask = (depth >= 0)
+                mask = (depth >= 0) & (depth < 400)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 
