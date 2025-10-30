@@ -520,7 +520,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # mask = (depth > 1e-3) 
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
-            mask = (depth > 0.001) & (depth < 400)
+            mask = (depth > 0.001) & (depth < 1)
 
 
             # print("pred shape:", pred.shape)
@@ -574,7 +574,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # depth = denorm_depth_torch(depth, d_min, d_max)
 
 
-                mask = (depth >= 0) & (depth < 400)
+                mask = (depth >= 0) & (depth < 1)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 

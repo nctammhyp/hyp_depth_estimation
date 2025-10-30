@@ -74,6 +74,30 @@ def depth_to_inv_norm(depth, d_min=0.001, d_max=400):
     # không clip ngay, chỉ đảm bảo giới hạn
     return s.astype(np.float32)
 
+def depth_to_norm_per_image(depth, d_min=0.001):
+    """
+    Chuẩn hóa depth per-image (KHÔNG đảo nghịch).
+    Tự động calib theo min-max của từng ảnh.
+    Depth gần thì nhỏ, xa thì lớn => sau chuẩn hóa vẫn giữ thứ tự đó.
+
+    Args:
+        depth: ndarray, depth map gốc.
+        d_min: giá trị nhỏ nhất hợp lệ để tránh NaN/Inf.
+
+    Returns:
+        depth_norm: ndarray float32, chuẩn hóa [0,1] theo min-max của ảnh.
+    """
+    depth = np.maximum(depth, d_min)
+    
+    d_min_img = np.percentile(depth, 1)   # loại nhiễu outlier
+    d_max_img = np.percentile(depth, 99)
+    
+    depth = np.clip(depth, d_min_img, d_max_img)
+    
+    s = (depth - d_min_img) / (d_max_img - d_min_img + 1e-8)
+    return s.astype(np.float32)
+
+
 class DepthDataset(Dataset):
     def __init__(self, paths, mode="train", size=(224, 224)):
         self.paths = paths
@@ -94,7 +118,8 @@ class DepthDataset(Dataset):
     def normalize_depth(self, depth):
         # return depth_to_norm_log(depth)
         # return normalize_depth_quantile_np(depth)
-        return depth_to_inv_norm(depth)
+        # return depth_to_inv_norm(depth)
+        return depth_to_norm_per_image(depth)
 
 
     def __getitem__(self, index):
