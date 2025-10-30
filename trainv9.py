@@ -482,8 +482,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/29/last_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/29/last_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/30/last_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/30/last_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
@@ -507,7 +507,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        adjust_learning_rate(optim, epoch, learning_rate)
+        # adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
@@ -679,4 +679,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/30")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/31")
