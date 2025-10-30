@@ -85,7 +85,7 @@ class DepthDataset(Dataset):
         # Data augmentation
         self.augs = A.Compose([
             A.HorizontalFlip(p=0.5),
-            A.RandomBrightnessContrast()
+            # A.RandomBrightnessContrast()
         ])
 
     def __len__(self):
