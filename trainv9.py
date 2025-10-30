@@ -336,7 +336,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 600
-    learning_rate=0.01
+    learning_rate=5e-6
     # learning_rate=0.005
 
 
@@ -482,8 +482,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/26/best_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/26/best_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/29/last_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/29/last_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
@@ -534,6 +534,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
             loss = loss1 + loss2 + loss3 + loss4
 
+            # loss = criterion(pred,depth,mask)
             # loss = criterion(pred, depth)
 
             loss.backward()
@@ -678,4 +679,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/29")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/30")
