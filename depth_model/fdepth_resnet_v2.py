@@ -53,7 +53,7 @@ class NNConv5_DecoderV2(nn.Module):
 
 
 class FastDepthV2(nn.Module):
-  def __init__(self, kernel_size=5, max_depth = 600, use_ffm = True):
+  def __init__(self, kernel_size=5, max_depth = 600, use_ffm = False):
     super(FastDepthV2,self).__init__()
     resnet = resnet18.load_resnet18()
     # Bỏ avgpool và fc
@@ -178,6 +178,8 @@ class FastDepthV2(nn.Module):
     # x = torch.sigmoid(x) * self.max_depth  # scale về [0, max_depth]
     # x = F.relu(x)
     x = F.interpolate(x, size=(196, 322), mode='bilinear', align_corners=False)
+
+    x = F.relu(x)
 
   
     return x
