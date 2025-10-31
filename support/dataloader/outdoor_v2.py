@@ -98,6 +98,39 @@ def depth_to_norm_per_image(depth, d_min=0.001):
     return s.astype(np.float32)
 
 
+def abs_to_rel(depth_abs, ignore_zero=True):
+    """
+    Chuẩn hóa absolute depth (16-bit hoặc float) -> relative [0,1]
+    theo min–max của từng ảnh (per-image normalization).
+
+    Args:
+        depth_abs: ndarray (H, W), depth map 16-bit hoặc float.
+        ignore_zero: bool, bỏ qua giá trị 0 (thường là invalid depth).
+
+    Returns:
+        depth_rel: ndarray float32 trong [0,1].
+    """
+    depth = depth_abs.astype(np.float32)
+    
+    if ignore_zero:
+        valid = depth > 0
+    else:
+        valid = np.ones_like(depth, dtype=bool)
+
+    if not np.any(valid):
+        # Nếu toàn bộ ảnh không có giá trị hợp lệ
+        return np.zeros_like(depth, dtype=np.float32)
+
+    # Tính d_min và d_max theo phần trăm để tránh outlier
+    d_min = np.percentile(depth[valid], 1)
+    d_max = np.percentile(depth[valid], 99)
+
+    # Chuẩn hóa về [0,1]
+    depth = np.clip(depth, d_min, d_max)
+    depth_rel = (depth - d_min) / (d_max - d_min + 1e-8)
+    return depth_rel.astype(np.float32)
+
+
 class DepthDataset(Dataset):
     def __init__(self, paths, mode="train", size=(224, 224)):
         self.paths = paths
