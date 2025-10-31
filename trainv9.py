@@ -575,7 +575,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # depth = denorm_depth_torch(depth, d_min, d_max)
 
 
-                mask = (depth >= 0) & (depth < 1)
+                mask = (depth >= 0) & (depth < 10)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 
