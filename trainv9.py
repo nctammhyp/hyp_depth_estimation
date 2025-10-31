@@ -336,7 +336,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     warmup_epochs = 8
     num_cycles = 2
     max_depth = 600
-    learning_rate=0.01
+    learning_rate=5e-6
     # learning_rate=0.005
 
 
@@ -365,7 +365,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
     # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
-    optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=1e-4)
+    optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=0.01)
 
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
@@ -404,12 +404,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # criterion = DepthLoss_custom()
 
-    # criterion = SiLogLoss() # author's loss
+    criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
     # criterion = loss_fn.L1NormLoss()
     # criterion = loss_fn.CompositeLoss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
