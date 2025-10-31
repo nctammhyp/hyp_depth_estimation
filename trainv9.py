@@ -297,8 +297,10 @@ train bang l1 thi de lr lon tren nhieu ep vi du 30 ep
 """
 
 def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 1:
+    if epoch < 25:
         lr = learning_rate
+    elif epoch < 100:
+        lr = learning_rate / 2
     elif epoch < 160:
         lr = learning_rate / 4   # 0.00125
     else:
@@ -337,7 +339,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     num_cycles = 2
     max_depth = 600
     # learning_rate=5e-6
-    learning_rate=0.005
+    learning_rate=0.01
 
 
 
