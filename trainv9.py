@@ -53,6 +53,7 @@ import gc
 
 import autoclip
 from autoclip.torch import QuantileClip
+from sam import SAM
 
 
 
@@ -367,7 +368,11 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    optim = torch.optim.SGD
+
+
+    optim = SAM(model.parameters(), optim, rho=2, adaptive=True, lr=0.01, momentum=0.9, weight_decay=0.0005)
     # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
     # optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=0.01)
 
@@ -488,8 +493,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/36/last_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/36/last_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/38/last_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/38/best_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
@@ -497,8 +502,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         model = model.to(device)
 
         # # --- Đóng băng encoder ---
-        # for param in model.encoder.parameters():
-        #     param.requires_grad = False
+        for param in model.encoder.parameters():
+            param.requires_grad = False
 
         # # --- Đóng băng thêm decoder.conv1 và decoder.conv2 ---
         # for param in model.decoder.conv1.parameters():
@@ -702,4 +707,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/38")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/39")
