@@ -579,7 +579,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
             disable_running_stats(model)
 
-            l2 = loss_v3.compute_depth_loss(pred, depth)
+            l2 = loss_v3.compute_depth_loss(model(img), depth)
             l2.backward()
 
             optim.second_step(zero_grad=True)
