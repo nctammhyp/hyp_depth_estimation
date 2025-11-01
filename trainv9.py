@@ -135,8 +135,8 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    loss = criterion(pred, target, mask)
-    # loss = criterion(pred, target)
+    # loss = criterion(pred, target, mask)
+    loss = criterion(pred, target)
     # loss = torch.tensor(0.0)
 
 
@@ -412,7 +412,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
+    # criterion = loss_v3.compute_depth_loss()
     # criterion = loss_fn.L1NormLoss()
     # criterion = loss_fn.CompositeLoss()
     # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
@@ -494,20 +495,20 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # model.load_state_dict(checkpoint)
         model = model.to(device)
 
-        # --- Đóng băng encoder ---
-        for param in model.encoder.parameters():
-            param.requires_grad = False
+        # # --- Đóng băng encoder ---
+        # for param in model.encoder.parameters():
+        #     param.requires_grad = False
 
-        # --- Đóng băng thêm decoder.conv1 và decoder.conv2 ---
-        for param in model.decoder.conv1.parameters():
-            param.requires_grad = False
-        for param in model.decoder.conv2.parameters():
-            param.requires_grad = False
+        # # --- Đóng băng thêm decoder.conv1 và decoder.conv2 ---
+        # for param in model.decoder.conv1.parameters():
+        #     param.requires_grad = False
+        # for param in model.decoder.conv2.parameters():
+        #     param.requires_grad = False
 
-        for param in model.decoder.conv3.parameters():
-            param.requires_grad = False        
+        # for param in model.decoder.conv3.parameters():
+        #     param.requires_grad = False        
 
-        print("✅ **** freeze 2 bậc ****  ")
+        # print("✅ **** freeze 2 bậc ****  ")
 
 
 
@@ -554,8 +555,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
             # loss = loss1 + loss2 + loss3 + loss4
 
-            loss = criterion(pred,depth,mask)
+            # loss = criterion(pred,depth,mask)
             # loss = criterion(pred, depth)
+            loss = loss_v3.compute_depth_loss(pred, depth)
 
             loss.backward()
             optim.step()
@@ -606,7 +608,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # print("pred shape:", pred.shape)
                 # print("target shape:", target.shape)
                 # print("valid_mask shape:", mask.shape)
-                cur_results = eval_depth(pred[mask], depth[mask], criterion)
+                cur_results = eval_depth(pred[mask], depth[mask], loss_v3.compute_depth_loss)
 
 
                 for k in results:
@@ -699,4 +701,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/37")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/38")
