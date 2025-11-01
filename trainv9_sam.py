@@ -545,6 +545,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             img, depth = input.to(device), target.to(device)
 
             optim.zero_grad()
+
+            enable_running_stats(model)
+
             pred = model(img)
             # pred, disp1, disp2, disp3 = model(img)
 
@@ -571,7 +574,16 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             loss = loss_v3.compute_depth_loss(pred, depth)
 
             loss.backward()
-            optim.step()
+
+            optim.first_step(zero_grad=True)
+
+            disable_running_stats(model)
+
+            loss_v3.compute_depth_loss(pred, depth).backward()
+
+            optim.second_step(zero_grad=True)
+
+            # optim.step()
             # scheduler.step()
 
             total_loss += loss.item()
