@@ -297,11 +297,11 @@ train bang l1 thi de lr lon tren nhieu ep vi du 30 ep
 """
 
 def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 25:
+    if epoch < 10:
         lr = learning_rate
-    elif epoch < 100:
+    elif epoch < 30:
         lr = learning_rate / 2
-    elif epoch < 160:
+    elif epoch < 100:
         lr = learning_rate / 4   # 0.00125
     else:
         lr = learning_rate / 8   # 0.000625
