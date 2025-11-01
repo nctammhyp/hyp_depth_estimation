@@ -134,9 +134,9 @@ def eval_depth(pred, target, criterion):
     )
 
     mask = (target >= 1e-3)
-    # loss = criterion(pred, target, mask)
+    loss = criterion(pred, target, mask)
     # loss = criterion(pred, target)
-    loss = torch.tensor(0.0)
+    # loss = torch.tensor(0.0)
 
 
     return {
@@ -613,9 +613,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         }, f"{state_path}/last_checkpoint.pth")
 
         # if results['abs_rel'] < best_val_absrel:
-        if results['rmse'] < best_val:
+        if results['loss'] < best_val:
 
-            best_val = results['rmse']
+            best_val = results['loss']
             new_ckpt = f"{state_path}/best_checkpoint.pth"
 
             # 1. Lưu checkpoint mới
