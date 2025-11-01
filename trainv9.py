@@ -365,11 +365,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
-    optim = torch.optim.SGD
+    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    # optim = torch.optim.SGD
 
 
-    optim = SAM(model.parameters(), optim, rho=2, adaptive=True, lr=0.01, momentum=0.9, weight_decay=0.0005)
     # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
     # optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=0.01)
 
