@@ -339,7 +339,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     num_cycles = 2
     max_depth = 600
     # learning_rate=5e-6
-    learning_rate=0.01
+    learning_rate=0.005
 
 
 
@@ -517,7 +517,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        # adjust_learning_rate(optim, epoch, learning_rate)
+        adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
