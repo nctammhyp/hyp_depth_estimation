@@ -30,6 +30,7 @@ import torch.optim as optim
 import utils, loss_func
 from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss
 from metric_depth.util import loss as loss_fn
+from metric_depth.util import loss_v3
 
 
 from torch.optim.lr_scheduler import LambdaLR
@@ -339,7 +340,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     num_cycles = 2
     max_depth = 600
     # learning_rate=5e-6
-    learning_rate=0.005
+    learning_rate=0.0003412685
 
 
 
@@ -485,8 +486,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     if load_state:
         print("----------   load checkpoint -------------")
-        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/35/best_checkpoint.pth")
-        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/35/best_checkpoint.pth", map_location=device)
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/36/last_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/36/last_checkpoint.pth", map_location=device)
         model.load_state_dict(checkpoint["model"])
         # optim.load_state_dict(checkpoint["optim"])
 
@@ -502,6 +503,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             param.requires_grad = False
         for param in model.decoder.conv2.parameters():
             param.requires_grad = False
+
+        for param in model.decoder.conv3.parameters():
+            param.requires_grad = False        
 
         print("✅ **** freeze 2 bậc ****  ")
 
@@ -695,4 +699,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/36")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/37")
