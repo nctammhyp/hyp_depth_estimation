@@ -296,7 +296,7 @@ train bang l1 thi de lr lon tren nhieu ep vi du 30 ep
 """
 
 def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
-    if epoch < 10:
+    if epoch < 7:
         lr = learning_rate
     elif epoch < 30:
         lr = learning_rate / 2
@@ -339,7 +339,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     max_depth = 600
     # learning_rate=5e-6
     # learning_rate=0.0003412685
-    learning_rate=0.01
+    learning_rate=0.0037851242
 
 
 
@@ -530,7 +530,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        # adjust_learning_rate(optim, epoch, learning_rate)
+        adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
@@ -634,7 +634,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         }, f"{state_path}/last_checkpoint.pth")
 
         # if results['abs_rel'] < best_val_absrel:
-        if results['rmse'] < best_val and epoch >= 10:
+        if results['rmse'] < best_val and epoch >= 3:
 
             best_val = results['rmse']
             new_ckpt = f"{state_path}/best_checkpoint.pth"
