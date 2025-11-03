@@ -354,8 +354,8 @@ def collate_fn(batch):
 # ===================== Hàm tạo DataLoader =====================
 def create_data_loaders(data_root, batch_size=8, size=(160, 128)):
 
-    # train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
-    train_paths = get_image_label_pairs_step_k(os.path.join(data_root, "train"))
+    train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
+    # train_paths = get_image_label_pairs_step_k(os.path.join(data_root, "train"))
 
     # train_paths = subdataset_get_image_label_pairs(
     #     directory=os.path.join(data_root, "train"),
