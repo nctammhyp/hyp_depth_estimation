@@ -366,12 +366,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     #       weight_decay=0.01
     #   )
 
-    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
     # optim = torch.optim.SGD
 
 
     # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
-    # optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=0.01)
+    optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=0.01)
 
 
     # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
@@ -531,7 +531,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        # adjust_learning_rate(optim, epoch, learning_rate)
+        adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
