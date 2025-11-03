@@ -429,8 +429,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     if use_cross_dataset:
         # train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
         # train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(322, 196))
-        # train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
-        # train_loader_v4 = cross_dataset.create_train_loader(batch_size=8, size=(322, 196))
+        train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
+        train_loader_v4 = cross_dataset.create_train_loader(batch_size=8, size=(322, 196))
 
         # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
         train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
@@ -439,9 +439,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
         # print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
         # print(f"train_loader_v2: {len(train_loader_v2.dataset)} samples ({len(train_loader_v2)} batches)")
-        # print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
-        # print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
-        # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
+        print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
+        print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
+        print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
         # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
         print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
 
@@ -451,9 +451,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         datasets = [
             # train_loader_v1.dataset,
             # train_loader_v2.dataset,
-            # train_loader_v3.dataset,
-            # val_loader_v3.dataset,   # thêm val_loader_v3
-            # train_loader_v4.dataset,
+            train_loader_v3.dataset,
+            val_loader_v3.dataset,   # thêm val_loader_v3
+            train_loader_v4.dataset,
             # train_loader_v5.dataset
             train_loader_v6.dataset
         ]
@@ -531,7 +531,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     for epoch in range(0, num_epochs):
         model.train()
         total_loss = 0
-        adjust_learning_rate(optim, epoch, learning_rate)
+        # adjust_learning_rate(optim, epoch, learning_rate)
 
         for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
             img, depth = input.to(device), target.to(device)
