@@ -228,6 +228,39 @@ def get_image_label_pairs(directory, img_ext=".jpg", label_ext=".npy"):
     return pairs
 
 
+def get_image_label_pairs_step_k(directory, img_ext=".jpg", label_ext=".npy", step=10):
+    img_root = os.path.join(directory, "images")
+    lbl_root = os.path.join(directory, "labels_npy_322_196")
+
+    pairs = []
+    if not os.path.exists(img_root) or not os.path.exists(lbl_root):
+        print("Thư mục rỗng!")
+        return pairs
+
+    for scene_name in sorted(os.listdir(img_root)):
+        img_dir = os.path.join(img_root, scene_name)
+        lbl_dir = os.path.join(lbl_root, scene_name)
+        if not os.path.isdir(img_dir) or not os.path.isdir(lbl_dir):
+            continue
+
+        # Lọc các file có phần mở rộng phù hợp
+        img_files = {os.path.splitext(f)[0]: f for f in os.listdir(img_dir) if f.endswith(img_ext)}
+        lbl_files = {os.path.splitext(f)[0]: f for f in os.listdir(lbl_dir) if f.endswith(label_ext)}
+
+        # Lấy giao nhau theo tên file (bỏ phần mở rộng)
+        common_keys = sorted(set(img_files.keys()) & set(lbl_files.keys()))
+
+        # Lấy cách 10 ảnh
+        for key in common_keys[::step]:
+            rgb_path = os.path.join(img_dir, img_files[key])
+            depth_path = os.path.join(lbl_dir, lbl_files[key])
+            if os.path.isfile(rgb_path) and os.path.isfile(depth_path):
+                pairs.append((rgb_path, depth_path))
+
+    return pairs
+
+
+
 def subdataset_get_image_label_pairs(directory, img_ext=".jpg", label_ext=".npy", selected_scenes=None):
     img_root = os.path.join(directory, "images")
     lbl_root = os.path.join(directory, "labels_npy_322_196")
@@ -321,7 +354,9 @@ def collate_fn(batch):
 # ===================== Hàm tạo DataLoader =====================
 def create_data_loaders(data_root, batch_size=8, size=(160, 128)):
 
-    train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
+    # train_paths = get_image_label_pairs(os.path.join(data_root, "train"))
+    train_paths = get_image_label_pairs_step_k(os.path.join(data_root, "train"))
+
     # train_paths = subdataset_get_image_label_pairs(
     #     directory=os.path.join(data_root, "train"),
     #     selected_scenes=["leak_41", "leak_42"]
