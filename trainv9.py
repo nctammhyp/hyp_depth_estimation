@@ -339,8 +339,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     max_depth = 600
     # learning_rate=5e-6
     # learning_rate=0.0003412685
-    # learning_rate=0.01
-    learning_rate=0.005
+    learning_rate=0.01
+    # learning_rate=0.005
 
 
 
@@ -464,7 +464,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # Tạo DataLoader chung
         combined_train_loader = DataLoader(
             combined_train_dataset,
-            batch_size=8,
+            batch_size=32,
             shuffle=True,       # quan trọng để trộn toàn bộ data
             num_workers=8,
             pin_memory=True,
@@ -705,4 +705,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/40")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/40")
