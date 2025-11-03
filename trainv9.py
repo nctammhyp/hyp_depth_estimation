@@ -339,7 +339,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     max_depth = 600
     # learning_rate=5e-6
     # learning_rate=0.0003412685
-    learning_rate=0.0037851242
+    learning_rate=0.01
 
 
 
