@@ -132,10 +132,10 @@ def eval_depth(pred, target, criterion):
         torch.mean(diff_log ** 2) - 0.5 * (torch.mean(diff_log) ** 2)
     )
 
-    mask = (target >= 1e-3)
-    # loss = criterion(pred, target, mask)
+    mask = (target >= 0)
+    loss = criterion(pred, target, mask)
     # loss = criterion(pred, target)
-    loss = torch.tensor(0.0)
+    # loss = torch.tensor(0.0)
 
 
     return {
@@ -414,7 +414,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    # criterion = L1Loss()
+    criterion = L1Loss()
     # criterion = loss_v3.compute_depth_loss()
     # criterion = loss_fn.L1NormLoss()
     # criterion = loss_fn.CompositeLoss()
@@ -557,9 +557,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
             # loss = loss1 + loss2 + loss3 + loss4
 
-            # loss = criterion(pred,depth,mask)
+            loss = criterion(pred,depth,mask)
             # loss = criterion(pred, depth)
-            loss = loss_v3.compute_depth_loss(pred, depth)
+            # loss = loss_v3.compute_depth_loss(pred, depth)
 
             loss.backward()
             optim.step()
@@ -610,7 +610,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # print("pred shape:", pred.shape)
                 # print("target shape:", target.shape)
                 # print("valid_mask shape:", mask.shape)
-                cur_results = eval_depth(pred[mask], depth[mask], loss_v3.compute_depth_loss)
+                # cur_results = eval_depth(pred[mask], depth[mask], loss_v3.compute_depth_loss)
+                cur_results = eval_depth(pred[mask], depth[mask], criterion)
 
 
                 for k in results:
