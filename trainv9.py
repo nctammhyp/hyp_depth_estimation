@@ -636,7 +636,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         }, f"{state_path}/last_checkpoint.pth")
 
         # if results['abs_rel'] < best_val_absrel:
-        if results['rmse'] < best_val and epoch >= 3:
+        if results['rmse'] < best_val and epoch >= 0:
 
             best_val = results['rmse']
             new_ckpt = f"{state_path}/best_checkpoint.pth"
