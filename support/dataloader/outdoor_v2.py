@@ -140,8 +140,13 @@ class DepthDataset(Dataset):
         net_w, net_h = size
 
         # Data augmentation
+        # self.augs = A.Compose([
+        #     A.HorizontalFlip(p=0.5),
+        #     # A.RandomBrightnessContrast()
+        # ])
+
         self.augs = A.Compose([
-            A.HorizontalFlip(p=0.5),
+            # A.HorizontalFlip(p=0.5),
             # A.RandomBrightnessContrast()
         ])
 
