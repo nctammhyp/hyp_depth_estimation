@@ -24,11 +24,11 @@ from torch.utils.data import DataLoader
 # train_loader, val_loader = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
 train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
-# Giả sử train_loader.dataset là Dataset gốc
-train_subset = Subset(train_loader.dataset, range(200))
-val_subset = Subset(val_loader.dataset, range(200))
-train_loader = DataLoader(train_subset, batch_size=train_loader.batch_size, shuffle=False)
-val_loader = DataLoader(val_subset, batch_size=val_loader.batch_size, shuffle=False)
+# # Giả sử train_loader.dataset là Dataset gốc
+# train_subset = Subset(train_loader.dataset, range(200))
+# val_subset = Subset(val_loader.dataset, range(200))
+# train_loader = DataLoader(train_subset, batch_size=train_loader.batch_size, shuffle=False)
+# val_loader = DataLoader(val_subset, batch_size=val_loader.batch_size, shuffle=False)
 
 # ======================
 # Deep Feature Extractor
@@ -86,8 +86,15 @@ class DeepFeatureExtractor(nn.Module):
 device = "cuda" if torch.cuda.is_available() else "cpu"
 deep_extractor = DeepFeatureExtractor("resnet18", pretrained=True, device=device)
 
+
+def preprocess_batch(rgb_batch):
+    mean = torch.tensor([0.485, 0.456, 0.406]).view(1,3,1,1).to(rgb_batch.device)
+    std = torch.tensor([0.229, 0.224, 0.225]).view(1,3,1,1).to(rgb_batch.device)
+    return (rgb_batch - mean) / std
+
+
 def extract_features(rgb_batch):
-    # rgb_batch = preprocess_batch(rgb_batch)
+    rgb_batch = preprocess_batch(rgb_batch)
     with torch.no_grad():
         feats = deep_extractor(rgb_batch)
     return feats
