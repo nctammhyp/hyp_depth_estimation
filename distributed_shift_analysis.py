@@ -21,8 +21,8 @@ from torch.utils.data import DataLoader
 # ----------------------
 # 1. Load dataset
 # ----------------------
-# train_loader, val_loader = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
-train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+train_loader, val_loader = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
+# train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
 # # Giả sử train_loader.dataset là Dataset gốc
 # train_subset = Subset(train_loader.dataset, range(200))
@@ -147,7 +147,7 @@ print("ROC-AUC:", roc_auc_score(y_test, y_prob))
 
 
 # ========== Tạo thư mục lưu ==========
-save_dir = "dataset_infor/nyuv2"
+save_dir = "dataset_infor/outdoor_2"
 os.makedirs(save_dir, exist_ok=True)
 
 # ========== Hàm tính đặc trưng thống kê ==========
