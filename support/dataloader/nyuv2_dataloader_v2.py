@@ -109,7 +109,7 @@ def collate_fn(batch):
         return None  # Skip if entire batch failed
     return default_collate(batch)
 
-def create_data_loaders(batch_size=[64, 64], subset=False):
+def create_data_loaders(batch_size=[8, 8], subset=False):
     print("Creating dataset... patience.")
     base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
     # base_dir = r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\nyuv2_partial_406"
