@@ -55,7 +55,7 @@ for rgb, depth in tqdm(train_loader, desc="Extracting train feats", total=len(tr
     #     break
 
 # Val = 1
-for rgb, depth in tqdm(val_loader, desc="Extracting val feats", total=len(val_loader)):
+for rgb, depth in tqdm(train_loader, desc="Extracting val feats", total=len(train_loader)):
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([1]*len(feats))
