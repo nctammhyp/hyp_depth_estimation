@@ -25,8 +25,8 @@ from torch.utils.data import DataLoader
 train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
 # Giả sử train_loader.dataset là Dataset gốc
-train_subset = Subset(train_loader.dataset, range(100))
-val_subset = Subset(val_loader.dataset, range(100))
+train_subset = Subset(train_loader.dataset, range(200))
+val_subset = Subset(val_loader.dataset, range(200))
 train_loader = DataLoader(train_subset, batch_size=train_loader.batch_size, shuffle=False)
 val_loader = DataLoader(val_subset, batch_size=val_loader.batch_size, shuffle=False)
 
@@ -103,16 +103,16 @@ for rgb, depth in tqdm(train_loader, desc="Extracting train feats", total=len(tr
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([0]*len(feats))
-    if len(X) > 100:  # Giới hạn để chạy nhanh
-        break
+    # if len(X) > 100:  # Giới hạn để chạy nhanh
+    #     break
 
 # Val = 1
 for rgb, depth in tqdm(val_loader, desc="Extracting val feats", total=len(val_loader)):
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([1]*len(feats))
-    if len(X) > 100:
-        break
+    # if len(X) > 100:
+    #     break
 
 X = np.array(X)
 y = np.array(y)
