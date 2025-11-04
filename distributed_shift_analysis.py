@@ -233,16 +233,20 @@ def save_sample_images(train_loader, val_loader, save_dir):
     os.makedirs(save_dir, exist_ok=True)
     train_rgb, _ = next(iter(train_loader))
     val_rgb, _ = next(iter(val_loader))
-    for i in range(min(4, len(train_rgb))):
-        fig, axes = plt.subplots(1,2, figsize=(6,3))
-        axes[0].imshow(np.transpose(train_rgb[i].numpy(), (1,2,0)))
+
+    n_samples = min(4, len(train_rgb), len(val_rgb))  # lấy ít nhất 2 batch đều có ảnh
+    for i in range(n_samples):
+        fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+        axes[0].imshow(np.transpose(train_rgb[i].numpy(), (1, 2, 0)))
         axes[0].set_title("Train Sample")
-        axes[1].imshow(np.transpose(val_rgb[i].numpy(), (1,2,0)))
+        axes[1].imshow(np.transpose(val_rgb[i].numpy(), (1, 2, 0)))
         axes[1].set_title("Val Sample")
-        for ax in axes: ax.axis('off')
+        for ax in axes:
+            ax.axis('off')
         plt.tight_layout()
         plt.savefig(os.path.join(save_dir, f"sample_pair_{i}.png"))
         plt.close()
+
 
 save_sample_images(train_loader, val_loader, os.path.join(save_dir, "samples"))
 
