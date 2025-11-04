@@ -109,7 +109,7 @@ def collate_fn(batch):
         return None  # Skip if entire batch failed
     return default_collate(batch)
 
-def create_data_loaders(batch_size=8, subset=False):
+def create_data_loaders(batch_size=[64, 64], subset=False):
     print("Creating dataset... patience.")
     base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
     # base_dir = r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\nyuv2_partial_406"
@@ -127,12 +127,12 @@ def create_data_loaders(batch_size=8, subset=False):
 
     # args.train_set = train_dataset
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True,
+        train_dataset, batch_size=batch_size[0], shuffle=True, pin_memory=True,
         worker_init_fn=lambda work_id: np.random.seed(work_id)
     )
 
     # args.val_set = val_dataset
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size[1], shuffle=False, pin_memory=True)
 
     print("Finish loading datasets")
 
