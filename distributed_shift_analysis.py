@@ -5,6 +5,11 @@ from tqdm import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.model_selection import train_test_split
+import torch
+import torch.nn as nn
+import torchvision.models as models
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 # ======================
 # Import dataloader từ file bạn có
@@ -17,31 +22,68 @@ from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloade
 # train_loader, val_loader = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
 train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
 
+# ======================
+# Deep Feature Extractor
+# ======================
+class DeepFeatureExtractor(nn.Module):
+    def __init__(self, model_name="resnet18", pretrained=True, device="cuda"):
+        super().__init__()
+        if model_name == "resnet18":
+            model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+            self.backbone = nn.Sequential(*list(model.children())[:-1])  # bỏ fc
+            self.out_dim = 512
+        elif model_name == "resnet50":
+            model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+            self.backbone = nn.Sequential(*list(model.children())[:-1])
+            self.out_dim = 2048
+        else:
+            raise NotImplementedError
+        self.device = device
+        self.to(device)
+        self.eval()
+
+    @torch.no_grad()
+    def forward(self, x):
+        x = x.to(self.device)
+        feat = self.backbone(x)  # [B, C, 1, 1]
+        feat = F.adaptive_avg_pool2d(feat, 1).view(x.size(0), -1)  # [B, C]
+        return feat.cpu().numpy()
+
 
 # ----------------------
 # 2. Trích xuất đặc trưng đơn giản cho từng ảnh
 # ----------------------
+# def extract_features(rgb_batch):
+#     """
+#     rgb_batch: Tensor [B,3,H,W] (0-1)
+#     Output: list[feature vector]
+#     """
+#     rgb_np = rgb_batch.numpy()
+#     feats = []
+#     for img in rgb_np:
+#         # Flatten [3,H,W] -> [H,W,3]
+#         img = np.transpose(img, (1,2,0))
+#         f = []
+#         # mean/std mỗi kênh
+#         for c in range(3):
+#             f.append(img[...,c].mean())
+#             f.append(img[...,c].std())
+#         # histogram (16-bin mỗi kênh)
+#         for c in range(3):
+#             hist, _ = np.histogram(img[...,c], bins=16, range=(0,1))
+#             f.extend(hist / np.sum(hist))
+#         feats.append(f)
+#     return feats
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+deep_extractor = DeepFeatureExtractor("resnet18", pretrained=True, device=device)
+
 def extract_features(rgb_batch):
-    """
-    rgb_batch: Tensor [B,3,H,W] (0-1)
-    Output: list[feature vector]
-    """
-    rgb_np = rgb_batch.numpy()
-    feats = []
-    for img in rgb_np:
-        # Flatten [3,H,W] -> [H,W,3]
-        img = np.transpose(img, (1,2,0))
-        f = []
-        # mean/std mỗi kênh
-        for c in range(3):
-            f.append(img[...,c].mean())
-            f.append(img[...,c].std())
-        # histogram (16-bin mỗi kênh)
-        for c in range(3):
-            hist, _ = np.histogram(img[...,c], bins=16, range=(0,1))
-            f.extend(hist / np.sum(hist))
-        feats.append(f)
+    # rgb_batch = preprocess_batch(rgb_batch)
+    with torch.no_grad():
+        feats = deep_extractor(rgb_batch)
     return feats
+
 
 # ----------------------
 # 3. Thu thập dữ liệu đặc trưng
