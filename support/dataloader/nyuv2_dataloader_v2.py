@@ -38,8 +38,8 @@ class NYUDataset(Dataset):
 
         # Step 2: Augmentation (applied AFTER resize)
         self.augs = A.Compose([
-            A.HorizontalFlip(p=0.5),
-            A.RandomBrightnessContrast(p=0.5)
+            # A.HorizontalFlip(p=0.5),
+            # A.RandomBrightnessContrast(p=0.5)
         ])
 
     def __len__(self):
