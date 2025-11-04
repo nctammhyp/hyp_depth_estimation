@@ -1,0 +1,567 @@
+"""
+python trainv6.py --backbone mobilenetv2 --weights_dir Weights
+loss: Scale and Shift Invariant Loss
+model: root
+"""
+
+import os
+import cv2
+import h5py
+import torch
+import random
+import numpy as np
+from torch.utils.data import Dataset, DataLoader
+from torchvision.transforms import Compose
+import albumentations as A
+import matplotlib.pyplot as plt
+
+# import model for traning
+# from model_v4 import FastDepthV2, FastDepth, weights_init
+from depth_model.fdepth_resnet_v2 import FastDepthV2
+# from depth_model.fdepth_resnet_v3 import FastDepthV2
+
+# from depth_model.depth_mobile import FastDepthV2, weights_init
+
+import dataloader_v6
+from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
+import torch.optim as optim
+
+
+import utils, loss_func
+from metric_depth.util.loss import SiLogLoss, DepthLoss, RelativeL1Loss, L1Loss
+from metric_depth.util import loss as loss_fn
+from metric_depth.util import loss_v3
+
+
+from torch.optim.lr_scheduler import LambdaLR
+
+import math
+from tqdm import tqdm
+import torch.nn.functional as F
+import json
+
+import glob
+
+import time
+
+from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3, outdoor_v1, outdoor_v2
+from torch.utils.data import ConcatDataset, DataLoader
+
+
+import torch
+import gc
+
+import autoclip
+from autoclip.torch import QuantileClip
+
+import random, torch, numpy as np
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False  # thêm dòng này nữa!
+random.seed(42)
+np.random.seed(42)
+torch.manual_seed(42)
+torch.cuda.manual_seed_all(42)
+
+# # ===============================
+# # 1️⃣ CUDA / cuDNN / TensorCore
+# # ===============================
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"          # đảm bảo mapping GPU ổn định
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "0"               # async kernel launch
+# os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"      # tối ưu workspace kernel
+# os.environ["CUBLAS_FORCE_TF32_TENSOR_OP_MATH"] = "1"  # bật TF32 TensorCore
+# os.environ["NVIDIA_TF32_OVERRIDE"] = "1"              # ép TF32 khi FP32 compute
+
+# os.environ["CUDNN_BENCHMARK"] = "1"                   # chọn kernel nhanh nhất
+# os.environ["CUDNN_DETERMINISTIC"] = "0"               # cho phép non-deterministic kernel
+
+# # ===============================
+# # 2️⃣ PyTorch memory / DSA
+# # ===============================
+# os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512,garbage_collection_threshold:0.8"
+# os.environ["TORCH_USE_CUDA_DSA"] = "1"                # bật dynamic shape allocation (PyTorch 2.x)
+
+# # ===============================
+# # 3️⃣ CPU / Thread / I/O
+# # ===============================
+# os.environ["OMP_NUM_THREADS"] = str(os.cpu_count())    # max CPU cores
+# os.environ["UV_THREADPOOL_SIZE"] = "64"               # tăng threadpool cho async I/O
+
+# # ===============================
+# # 4️⃣ Torch runtime flags
+# # ===============================
+# torch.backends.cudnn.benchmark = True
+# torch.backends.cudnn.deterministic = False
+# torch.set_float32_matmul_precision("high")           # bật TF32 trên Ada GPUs
+
+
+
+def eval_depth(pred, target, criterion):
+    eps = 1e-6  # tránh chia 0, log 0
+    assert pred.shape == target.shape
+
+    pred_safe = torch.clamp(pred, min=eps)
+    target_safe = torch.clamp(target, min=eps)
+
+    thresh = torch.max(target_safe / pred_safe, pred_safe / target_safe)
+    # d1 = torch.sum(thresh < 1.25).float() / len(thresh)
+    d1 = torch.sum(thresh < 1.25).float() / thresh.numel()
+
+
+    # thresh = torch.max(target_safe / pred_safe, pred_safe / target_safe)
+    # d1 = (thresh < 1.25).float().mean()
+
+    diff = pred_safe - target_safe
+
+    # print("NaN in pred:", torch.isnan(pred).any().item())
+    # print("NaN in target:", torch.isnan(target).any().item())
+
+    diff_log = torch.log(pred_safe) - torch.log(target_safe)
+    # print(f"errrrrrrrrrrrrrrrrr: {torch.log(pred_safe)}")
+
+    abs_rel = torch.mean(torch.abs(diff) / target_safe)
+    rmse = torch.sqrt(torch.mean(diff ** 2))
+    mae = torch.mean(torch.abs(diff))
+
+    silog = torch.sqrt(
+        torch.mean(diff_log ** 2) - 0.5 * (torch.mean(diff_log) ** 2)
+    )
+
+    mask = (target >= 0)
+    # loss = criterion(pred, target, mask)
+    # loss = criterion(pred, target)
+    loss = torch.tensor(0.0)
+
+
+    return {
+        'd1': d1.detach(),
+        'abs_rel': abs_rel.detach(),
+        'rmse': rmse.detach(),
+        'mae': mae.detach(),
+        'loss': loss.detach()
+    }
+
+
+def get_cosine_schedule_with_warmup(optimizer, num_warmup_steps, num_training_steps, num_cycles=0.5, last_epoch=-1):
+    def lr_lambda(current_step):
+        if current_step < num_warmup_steps:
+            return float(current_step) / float(max(1, num_warmup_steps))
+        progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
+        return max(0.0, 0.5 * (1.0 + math.cos(math.pi * num_cycles * 2.0 * progress)))
+    
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda, last_epoch)
+
+
+
+def inference_sample(model, state_path, device, model_type="last"):
+    """
+    Load model checkpoint and run inference on test dataset.
+
+    Args:
+        model: PyTorch model
+        state_path: Path chứa checkpoint
+        device: torch.device
+        model_type: "last" (checkpoint mới nhất) hoặc "best" (checkpoint tốt nhất)
+    """
+
+    if model_type == "last":
+        ckpt_path = os.path.join(state_path, "last_checkpoint.pth")
+    elif model_type == "best":
+        ckpt_path = os.path.join(state_path, "best_checkpoint.pth")
+    else:
+        raise ValueError("model_type must be either 'last' or 'best'")
+
+    if not os.path.exists(ckpt_path):
+        print(f"Checkpoint file not found: {ckpt_path}")
+    else:
+        # model = FastDepthV2(training=False)
+        print(f"*****      infer: {ckpt_path}    ******")
+        checkpoint = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(checkpoint["model"])
+        model.to(device)
+
+        model.eval()
+
+        # =========================
+        # 2. Paths setup
+        # =========================
+        data_test = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1/test"
+        
+        save_test = "predict_sample"
+        os.makedirs(save_test, exist_ok=True)
+
+        images_root = os.path.join(data_test, "images")
+        labels_root = os.path.join(data_test, "labels_npy_322_196")  # <-- Load từ thư mục chứa file .npy
+
+        # Lấy danh sách tất cả scene
+        scene_list = sorted(os.listdir(images_root))
+
+        epsilon = 1e-8
+        total_images = 0
+
+        # =========================
+        # 3. Inference từng scene
+        # =========================
+        for scene_name in scene_list:
+            scene_img_dir = os.path.join(images_root, scene_name)
+            scene_label_dir = os.path.join(labels_root, scene_name)
+
+            if not os.path.isdir(scene_img_dir):
+                continue
+
+            # Lấy danh sách file ảnh trong scene
+            # image_paths = sorted(glob.glob(os.path.join(scene_img_dir, "*.png")))
+            image_paths = sorted(
+                glob.glob(os.path.join(scene_img_dir, "*.png")) +
+                glob.glob(os.path.join(scene_img_dir, "*.jpg"))
+            )
+
+            print(f"[INFO] Scene {scene_name}: Found {len(image_paths)} images.")
+
+            for img_path in image_paths:
+                file_name = os.path.basename(img_path)
+                base_name = os.path.splitext(file_name)[0]
+
+                # Đường dẫn file .npy tương ứng
+                label_path = os.path.join(scene_label_dir, base_name + ".npy")
+
+                # print(label_path)
+
+                if not os.path.exists(label_path):
+                    print(f"Warning: No GT .npy found for {file_name} in scene {scene_name}, skipping...")
+                    continue
+
+                # ----- Read RGB -----
+                rgb = cv2.imread(img_path)[:, :, ::-1]  # BGR -> RGB
+
+                # ----- Load Depth từ file .npy -----
+                gt_depth = np.load(label_path).astype(np.float32)
+
+                # Resize về input size của model (160x128)
+                # rgb_resized = cv2.resize(rgb, (160, 128))
+                # gt_resized = cv2.resize(gt_depth, (160, 128))
+
+                rgb_resized = cv2.resize(rgb, (322, 196))
+                gt_resized = cv2.resize(gt_depth, (322, 196))
+
+                # Normalize GT depth để visualize
+                gt_resized = (gt_resized - gt_resized.min()) / (gt_resized.max() - gt_resized.min() + epsilon)
+
+                # ----- Chuẩn bị tensor -----
+                rgb_tensor = torch.from_numpy(rgb_resized / 255.0).float().permute(2, 0, 1).unsqueeze(0).to(device)
+
+                # ----- Model inference -----
+                with torch.no_grad():
+                    pred_depth = model(rgb_tensor).cpu().squeeze(0).squeeze(0).numpy()
+
+                # Normalize predicted depth để hiển thị
+                pred_depth = (pred_depth - pred_depth.min()) / (pred_depth.max() - pred_depth.min() + epsilon)
+
+                # =========================
+                # 4. Convert to color maps
+                # =========================
+                gt_colormap = (plt.cm.plasma(gt_resized)[:, :, :3] * 255).astype(np.uint8)
+                pred_colormap = (plt.cm.plasma(pred_depth)[:, :, :3] * 255).astype(np.uint8)
+
+                # Resize RGB gốc về cùng kích thước
+                # rgb_show = cv2.resize(rgb, (160, 128))
+                rgb_show = cv2.resize(rgb, (322, 196))
+
+                # =========================
+                # 5. Horizontal concat
+                # =========================
+                concat_img = np.concatenate([rgb_show, gt_colormap, pred_colormap], axis=1)
+
+                # =========================
+                # 6. Save result
+                # =========================
+                save_name = f"{scene_name}_{file_name}"  # thêm tiền tố scene
+                save_path = os.path.join(save_test, f"{model_type}_{save_name}")
+                cv2.imwrite(save_path, cv2.cvtColor(concat_img, cv2.COLOR_RGB2BGR))
+
+                total_images += 1
+
+        print(f"[INFO] Inference completed. Total processed images: {total_images}")
+
+
+
+
+"""
+train bang l1 thi de lr lon tren nhieu ep vi du 30 ep
+"""
+
+def adjust_learning_rate(optimizer, epoch, learning_rate=0.005):
+    if epoch < 7:
+        lr = learning_rate
+    elif epoch < 30:
+        lr = learning_rate / 2
+    elif epoch < 100:
+        lr = learning_rate / 4   # 0.00125
+    else:
+        lr = learning_rate / 8   # 0.000625
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+
+# def adjust_learning_rate(optimizer, epoch, learning_rate=0.01):
+#     if epoch < 15:
+#         lr = learning_rate
+#     elif epoch < 60:
+#         lr = learning_rate / 2
+#     elif epoch < 120:
+#         lr = learning_rate / 4   # 0.0025
+#     elif epoch < 160:
+#         lr = learning_rate / 8   # 0.00125
+#     else:
+#         lr = learning_rate / 16   # 0.000625
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
+
+def denorm_depth_torch(s, d_min=0.001, d_max=1000.0):
+    """
+    Chuyển từ log-normalized depth [0,1] về giá trị depth thật (m)
+    """
+    log_d_min, log_d_max = np.log(d_min), np.log(d_max)
+    depth = torch.exp(log_d_max - s * (log_d_max - log_d_min))
+    return torch.clamp(depth, d_min, d_max)
+
+
+def train_fn(device = "cuda:0", load_state = False, state_path = './'):
+    # params
+    num_epochs = 5000
+    warmup_epochs = 8
+    num_cycles = 2
+    max_depth = 600
+    # learning_rate=5e-6
+    # learning_rate=0.0003412685
+    learning_rate=0.01
+    # learning_rate=0.005
+
+
+
+    print("CUDA available:", torch.cuda.is_available())
+    print("CUDA device:", torch.cuda.current_device())
+    print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
+
+
+
+    model = FastDepthV2()
+    # model = FastDepthV2(training=True)
+
+
+    # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
+    # model.decoder.apply(weights_init)
+    
+    
+    model.to(device)
+
+    # optim = torch.optim.Adam(
+    #       model.parameters(),  # lấy toàn bộ parameter của model
+    #       lr=0.01,
+    #       weight_decay=0.01
+    #   )
+
+    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    # optim = torch.optim.SGD
+
+
+    # optim = torch.optim.Adam(model.parameters(), lr = learning_rate, weight_decay=1e-4, betas=(0.9, 0.999))
+    # optim = torch.optim.AdamW(model.parameters(), lr = learning_rate ,weight_decay=0.01)
+
+
+    # optim = torch.optim.ASGD(model.parameters(), lr=0.01, lambd=0.0001, alpha=0.75, t0=1000000.0, weight_decay=0)
+
+    # optim = torch.optim.ASGD(
+    #     model.parameters(),
+    #     lr=learning_rate,            # max LR ban đầu
+    #     lambd=0.0001,
+    #     alpha=0.75,
+    #     t0=1e6,
+    #     weight_decay=0
+    # )
+
+
+    # optim = torch.optim.Adamax(model.parameters(), lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+
+    # optim = QuantileClip.as_optimizer(
+    #     optimizer=optim,
+    #     quantile=0.8,
+    #     history_length=1000,
+    # )
+
+    
+
+    
+    # backbone_params = model.encoder.parameters()
+    # decoder_params = model.decoder.parameters()
+
+    # optim = torch.optim.Adam([
+    #     {"params": backbone_params, "lr": 0.01},  # backbone LR nhỏ
+    #     {"params": decoder_params, "lr": 0.01}    # decoder LR lớn
+    # ], weight_decay=1e-5)
+
+
+    print('Model created')
+
+    # criterion = DepthLoss_custom()
+
+    # criterion = SiLogLoss() # author's loss
+    # criterion = CustomLoss()
+    # criterion = SiLogL1Loss()
+    # criterion = DepthLoss()
+    # criterion = RelativeL1Loss()
+    criterion = L1Loss()
+    # criterion = loss_v3.compute_depth_loss
+    # criterion = loss_fn.L1NormLoss()
+    # criterion = loss_fn.CompositeLoss()
+    # scheduler = transformers.get_cosine_schedule_with_warmup(optim, len(train_dataloader)*warmup_epochs, num_epochs*scheduler_rate*len(train_dataloader))
+
+    # train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=512, size=(160, 128))
+    # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+    train_loader, val_loader = None, None
+
+    use_cross_dataset = True
+    if use_cross_dataset:
+        # train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
+        # train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(322, 196))
+        # train_loader_v3, val_loader_v3 = nyuv2_dataloader_v2.create_data_loaders()
+        # train_loader_v4 = cross_dataset.create_train_loader(batch_size=8, size=(322, 196))
+
+        # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
+        train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
+
+
+        # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
+        # print(f"val_loader_v1:   {len(val_loader_v1.dataset)} samples ({len(val_loader_v1)} batches)")
+        # print(f"train_loader_v2: {len(train_loader_v2.dataset)} samples ({len(train_loader_v2)} batches)")
+        # print(f"train_loader_v3: {len(train_loader_v3.dataset)} samples ({len(train_loader_v3)} batches)")
+        # print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
+        # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
+        # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
+        # print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
+
+
+
+        # Gom tất cả dataset lại (kể cả val)
+        datasets = [
+            # train_loader_v1.dataset,
+            # train_loader_v2.dataset,
+            # train_loader_v3.dataset,
+            # val_loader_v3.dataset,   # thêm val_loader_v3
+            # train_loader_v4.dataset,
+            # train_loader_v5.dataset
+            train_loader_v6.dataset
+        ]
+
+        # Gộp chúng lại
+        combined_train_dataset = ConcatDataset(datasets)
+
+        # Tạo DataLoader chung
+        combined_train_loader = DataLoader(
+            combined_train_dataset,
+            batch_size=8,
+            shuffle=True,       # quan trọng để trộn toàn bộ data
+            num_workers=8,
+            pin_memory=True,
+            drop_last=True
+        )
+
+        train_loader, val_loader = combined_train_loader, val_loader_v6
+        # train_loader, val_loader = combined_train_loader, val_loader_v3
+        # train_loader, val_loader = combined_train_loader, train_loader_v5
+
+    else:
+        # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+        train_loader, val_loader = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(160, 128))
+
+
+
+    print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
+
+    if load_state:
+        print("----------   load checkpoint -------------")
+        print("checkpoint: /home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/43/last_checkpoint.pth")
+        checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/43/best_checkpoint.pth", map_location=device)
+        model.load_state_dict(checkpoint["model"])
+        # optim.load_state_dict(checkpoint["optim"])
+
+        # model.load_state_dict(checkpoint)
+        model = model.to(device)
+
+        # # # --- Đóng băng encoder ---
+        # for param in model.encoder.parameters():
+        #     param.requires_grad = False
+
+        # # # --- Đóng băng thêm decoder.conv1 và decoder.conv2 ---
+        # for param in model.decoder.conv1.parameters():
+        #     param.requires_grad = False
+        # for param in model.decoder.conv2.parameters():
+        #     param.requires_grad = False
+
+        # for param in model.decoder.conv3.parameters():
+        #     param.requires_grad = False        
+
+        # print("✅ **** freeze 2 bậc ****  ")
+
+
+        # ===== Validation =====
+        model.eval()
+        # results = {'d1': 0, 'rmse': 0}
+        results = {'d1': 0, 'abs_rel': 0, 'rmse': 0, 'mae': 0, 'loss': 0}
+        # test_loss = 0
+
+        with torch.no_grad():
+            for i , (input,target) in tqdm(enumerate(val_loader)):
+                img, depth = input.to(device), target.to(device)
+
+                pred = model(img)
+                # pred, disp1, disp2, disp3 = model(img)
+
+                # test_loss += criterion('l1',pred, depth).item()
+                # pred = pred.squeeze(1).squeeze(0)
+
+                # mask = (depth >= 0.001)
+                # cur_results = eval_depth(pred, depth)
+
+                # print(depth)
+
+                # # ----------------------------
+                # # 🔁 Reverse normalization
+                # # ----------------------------
+                # d_min, d_max = 0.001, 1000.0
+                # pred = denorm_depth_torch(pred, d_min, d_max)
+                # depth = denorm_depth_torch(depth, d_min, d_max)
+
+
+                mask = (depth > 0)
+                # mask = (depth > 1e-3) & torch.isfinite(depth)
+
+
+                # print(mask)
+
+                # valid_pixels = mask.sum().item()
+                # print(f"mask: {valid_pixels}")
+
+                # print("pred shape:", pred.shape)
+                # print("target shape:", target.shape)
+                # print("valid_mask shape:", mask.shape)
+                # cur_results = eval_depth(pred[mask], depth[mask], loss_v3.compute_depth_loss)
+                cur_results = eval_depth(pred[mask], depth[mask], criterion)
+
+
+                for k in results:
+                    results[k] += cur_results[k]
+
+        
+        # val_loss = test_loss/len(val_loader)
+
+        # for k in results:
+        #    results[k] = round(results[k] / len(val_loader), 3)
+        for k in results:
+            results[k] = round((results[k] / len(val_loader)).item(), 3)
+
+        print(f"val_metrics={results}")
+
+
+if __name__ == "__main__":
+    # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/44")
