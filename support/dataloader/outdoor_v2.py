@@ -150,9 +150,9 @@ class DepthDataset(Dataset):
     
     def normalize_depth(self, depth):
         # return depth_to_norm_log(depth)
-        # return normalize_depth_quantile_np(depth)
+        return normalize_depth_quantile_np(depth)
         # return depth_to_inv_norm(depth)
-        return depth_to_norm_per_image(depth)
+        # return depth_to_norm_per_image(depth)
 
 
     def __getitem__(self, index):
@@ -178,7 +178,7 @@ class DepthDataset(Dataset):
                 rgb, depth = rgb / 255.0, depth
 
 
-            # depth = self.normalize_depth(depth)
+            depth = self.normalize_depth(depth)
 
             # Chuyển sang tensor
             rgb = torch.from_numpy(rgb).float().permute(2, 0, 1)  # [C, H, W]

@@ -54,15 +54,9 @@ import gc
 import autoclip
 from autoclip.torch import QuantileClip
 
-# 1. Xóa cache
-torch.cuda.empty_cache()
-
-# 2. Xóa các object không dùng nữa
-gc.collect()
-
-# args = utils.parse_args()
-# ensure deterministic behavior
+import random, torch, numpy as np
 torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False  # thêm dòng này nữa!
 random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
@@ -705,4 +699,4 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/44")
+    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/45")
