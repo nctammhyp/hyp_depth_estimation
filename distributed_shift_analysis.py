@@ -95,16 +95,16 @@ for rgb, depth in tqdm(train_loader, desc="Extracting train feats", total=len(tr
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([0]*len(feats))
-    # if len(X) > 2000:  # Giới hạn để chạy nhanh
-    #     break
+    if len(X) > 2000:  # Giới hạn để chạy nhanh
+        break
 
 # Val = 1
 for rgb, depth in tqdm(val_loader, desc="Extracting val feats", total=len(val_loader)):
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([1]*len(feats))
-    # if len(X) > 4000:
-    #     break
+    if len(X) > 4000:
+        break
 
 X = np.array(X)
 y = np.array(y)
