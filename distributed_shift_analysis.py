@@ -15,12 +15,20 @@ import matplotlib.pyplot as plt
 # Import dataloader từ file bạn có
 # ======================
 from support.dataloader import nyuv2_dataloader_v2, cross_dataset, hyp_dataloader_v3, outdoor_v1, outdoor_v2
+from torch.utils.data import Subset
+from torch.utils.data import DataLoader
 
 # ----------------------
 # 1. Load dataset
 # ----------------------
 # train_loader, val_loader = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
 train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
+
+# Giả sử train_loader.dataset là Dataset gốc
+train_subset = Subset(train_loader.dataset, range(100))
+val_subset = Subset(val_loader.dataset, range(100))
+train_loader = DataLoader(train_subset, batch_size=train_loader.batch_size, shuffle=False)
+val_loader = DataLoader(val_subset, batch_size=val_loader.batch_size, shuffle=False)
 
 # ======================
 # Deep Feature Extractor
@@ -95,7 +103,7 @@ for rgb, depth in tqdm(train_loader, desc="Extracting train feats", total=len(tr
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([0]*len(feats))
-    if len(X) > 2000:  # Giới hạn để chạy nhanh
+    if len(X) > 100:  # Giới hạn để chạy nhanh
         break
 
 # Val = 1
@@ -103,7 +111,7 @@ for rgb, depth in tqdm(val_loader, desc="Extracting val feats", total=len(val_lo
     feats = extract_features(rgb)
     X.extend(feats)
     y.extend([1]*len(feats))
-    if len(X) > 4000:
+    if len(X) > 100:
         break
 
 X = np.array(X)
