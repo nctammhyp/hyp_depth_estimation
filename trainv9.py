@@ -427,7 +427,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # train_loader_v4 = cross_dataset.create_train_loader(batch_size=8, size=(322, 196))
 
         # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
-        train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
+        # train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
 
 
         # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
@@ -437,7 +437,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
         # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
         # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
-        print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
+        # print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
 
 
 
@@ -446,10 +446,10 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # train_loader_v1.dataset,
             # train_loader_v2.dataset,
             train_loader_v3.dataset,
-            val_loader_v3.dataset,   # thêm val_loader_v3
+            # val_loader_v3.dataset,   # thêm val_loader_v3
             # train_loader_v4.dataset,
             # train_loader_v5.dataset
-            train_loader_v6.dataset
+            # train_loader_v6.dataset
         ]
 
         # Gộp chúng lại
@@ -465,8 +465,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             drop_last=True
         )
 
-        train_loader, val_loader = combined_train_loader, val_loader_v6
-        # train_loader, val_loader = combined_train_loader, val_loader_v3
+        # train_loader, val_loader = combined_train_loader, val_loader_v6
+        train_loader, val_loader = combined_train_loader, val_loader_v3
         # train_loader, val_loader = combined_train_loader, train_loader_v5
 
     else:
