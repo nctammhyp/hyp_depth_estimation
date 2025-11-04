@@ -62,38 +62,6 @@ np.random.seed(42)
 torch.manual_seed(42)
 torch.cuda.manual_seed_all(42)
 
-# # ===============================
-# # 1️⃣ CUDA / cuDNN / TensorCore
-# # ===============================
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"          # đảm bảo mapping GPU ổn định
-# os.environ["CUDA_LAUNCH_BLOCKING"] = "0"               # async kernel launch
-# os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"      # tối ưu workspace kernel
-# os.environ["CUBLAS_FORCE_TF32_TENSOR_OP_MATH"] = "1"  # bật TF32 TensorCore
-# os.environ["NVIDIA_TF32_OVERRIDE"] = "1"              # ép TF32 khi FP32 compute
-
-# os.environ["CUDNN_BENCHMARK"] = "1"                   # chọn kernel nhanh nhất
-# os.environ["CUDNN_DETERMINISTIC"] = "0"               # cho phép non-deterministic kernel
-
-# # ===============================
-# # 2️⃣ PyTorch memory / DSA
-# # ===============================
-# os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512,garbage_collection_threshold:0.8"
-# os.environ["TORCH_USE_CUDA_DSA"] = "1"                # bật dynamic shape allocation (PyTorch 2.x)
-
-# # ===============================
-# # 3️⃣ CPU / Thread / I/O
-# # ===============================
-# os.environ["OMP_NUM_THREADS"] = str(os.cpu_count())    # max CPU cores
-# os.environ["UV_THREADPOOL_SIZE"] = "64"               # tăng threadpool cho async I/O
-
-# # ===============================
-# # 4️⃣ Torch runtime flags
-# # ===============================
-# torch.backends.cudnn.benchmark = True
-# torch.backends.cudnn.deterministic = False
-# torch.set_float32_matmul_precision("high")           # bật TF32 trên Ada GPUs
-
-
 
 def eval_depth(pred, target, criterion):
     eps = 1e-6  # tránh chia 0, log 0
@@ -437,7 +405,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # print(f"val_loader_v3:   {len(val_loader_v3.dataset)} samples ({len(val_loader_v3)} batches)")
         # print(f"train_loader_v4: {len(train_loader_v4.dataset)} samples ({len(train_loader_v4)} batches)")
         # print(f"outdoor v1: {len(train_loader_v5.dataset)} samples ({len(train_loader_v5)} batches)")
-        print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
+        # print(f"train_loader_v6: {len(train_loader_v6.dataset)} samples ({len(train_loader_v6)} batches)")
 
 
 
@@ -476,11 +444,6 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
     print(f"size of train loader: {len(train_loader)}; val loader: {len(val_loader)}")
- 
-    # best val monitor: loss silog
-    best_val = 1e9
-    # best_loss = 1e9
-    history = {"train_loss": [], "val_loss": [], "val_metrics": []}
 
     if load_state:
         print("----------   load checkpoint -------------")
@@ -505,64 +468,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         # for param in model.decoder.conv3.parameters():
         #     param.requires_grad = False        
 
-        print("✅ **** freeze 2 bậc ****  ")
+        # print("✅ **** freeze 2 bậc ****  ")
 
-
-
-    # model = torch.compile(model)  
-
-    
-
-    # Chọn device
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-    # for name, param in model.named_parameters():
-    #     print(name, param.device)
-
-    # print("------------------------------------------------------------------")
-
-
-    for epoch in range(0, num_epochs):
-        model.train()
-        total_loss = 0
-        adjust_learning_rate(optim, epoch, learning_rate)
-
-        for i , (input,target) in enumerate(tqdm(train_loader, total=len(train_loader))):
-            img, depth = input.to(device), target.to(device)
-
-            optim.zero_grad()
-            pred = model(img)
-            # pred, disp1, disp2, disp3 = model(img)
-
-
-            # mask = (depth > 1e-3) 
-            # mask = (depth > 1e-3) & torch.isfinite(depth)
-
-            mask = (depth > 5)
-
-
-            # print("pred shape:", pred.shape)
-            # print("target shape:", target.shape)
-            # print("valid_mask shape:", mask.shape)
-
-            # loss1 = criterion(pred,depth,mask)
-            # loss2 = criterion(disp1,depth,mask)
-            # loss3 = criterion(disp2,depth,mask)
-            # loss4 = criterion(disp3,depth,mask)
-
-            # loss = loss1 + loss2 + loss3 + loss4
-
-            loss = criterion(pred,depth,mask)
-            # loss = criterion(pred, depth)
-            # loss = loss_v3.compute_depth_loss(pred, depth)
-
-            loss.backward()
-            optim.step()
-            # scheduler.step()
-
-            total_loss += loss.item()
-
-        avg_loss = total_loss / len(train_loader)
 
         # ===== Validation =====
         model.eval()
@@ -593,7 +500,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
                 # depth = denorm_depth_torch(depth, d_min, d_max)
 
 
-                mask = (depth > 5)
+                mask = (depth > 0)
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
 
@@ -620,83 +527,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
         for k in results:
             results[k] = round((results[k] / len(val_loader)).item(), 3)
 
-        # ===== Save Checkpoint =====
-        torch.save({
-            "model": model.state_dict(),
-            "optim": optim.state_dict(),
-            "epoch": epoch
-
-            # "scheduler": scheduler.state_dict()
-        }, f"{state_path}/last_checkpoint.pth")
-
-        # if results['abs_rel'] < best_val_absrel:
-        if results['rmse'] < best_val and epoch >= 0:
-
-            best_val = results['rmse']
-            new_ckpt = f"{state_path}/best_checkpoint.pth"
-
-            # 1. Lưu checkpoint mới
-            # torch.save(model.state_dict(), new_ckpt)
-            torch.save({
-                "model": model.state_dict(),
-                "optim": optim.state_dict(),
-                "epoch": epoch
-                # "scheduler": scheduler.state_dict()
-            }, new_ckpt)
-
-
-            # inference cho best checkpoint
-            inference_sample(model, state_path, device, model_type="best")
-
-        inference_sample(model, state_path, device, model_type="last")
-
-
-        # Cập nhật history
-        history["train_loss"].append(avg_loss)
-        # history["val_loss"].append(val_loss)
-        history["val_metrics"].append(results)
-
-        # Lưu log JSON
-        with open(f"{state_path}/history.json", "w") as f:
-            json.dump(history, f, indent=2)
-
-
-        print(f"epoch_{epoch}, train_loss={avg_loss:.5f}, val_metrics={results}, - LR = {optim.param_groups[0]['lr']:.6f}")
-
-        # ==== Vẽ biểu đồ ====
-        # epochs = range(1, num_epochs+1)
-        epochs = range(1, len(history["train_loss"]) + 1)
-        loss_val = [m["loss"] for m in history["val_metrics"]]  # lấy metric silog từ val_metrics
-
-        plt.figure(figsize=(8, 5))
-
-        # Train loss
-        plt.plot(epochs, history["train_loss"], label="Train Loss", marker='o')
-
-        # Validation loss
-        plt.plot(epochs, loss_val, label="Val Loss", marker='s')
-
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title("Training vs Validation Loss")
-        plt.legend()
-        plt.grid(True)
-
-        # Lưu biểu đồ
-        plt.savefig(f"{state_path}/train_val_loss_curve.png", dpi=150)
-        plt.close()
-
-        absrel = [m["abs_rel"] for m in history["val_metrics"]]
-        plt.figure(figsize=(8,5))
-        plt.plot(epochs, absrel, label="AbsRel (val)")
-        plt.xlabel("Epoch")
-        plt.ylabel("AbsRel")
-        plt.legend()
-        plt.savefig(f"{state_path}/val_absrel_curve.png")
-        plt.close()
-
+        print(f"val_metrics={results}")
 
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/45")
+    train_fn(device='cuda:0', load_state=True, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/44")
