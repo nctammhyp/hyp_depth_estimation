@@ -102,6 +102,10 @@ def get_image_label_pairs(directory, img_ext=".png", label_ext=".npy"):
         return pairs
 
     for scene_name in sorted(os.listdir(img_root)):
+
+        if scene_name.startswith("leak_"):
+            continue
+
         img_dir = os.path.join(img_root, scene_name)
         lbl_dir = os.path.join(lbl_root, scene_name)
         if not os.path.isdir(img_dir) or not os.path.isdir(lbl_dir):
