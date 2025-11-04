@@ -214,7 +214,7 @@ plt.close()
 
 # ========== 4. Average histogram RGB ==========
 plt.figure(figsize=(6,4))
-bins = np.linspace(0,1,16)
+bins = np.linspace(0,1,17)
 for i, c in enumerate(['R','G','B']):
     plt.plot(bins[:-1], train_hist[i], label=f'Train {c}', linestyle='--')
     plt.plot(bins[:-1], val_hist[i], label=f'Val {c}', linestyle='-')
