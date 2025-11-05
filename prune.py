@@ -359,7 +359,7 @@ def train_fn(model, device = "cpu", load_state = False, state_path = './'):
 def prune():
     device = "cuda:0"
     model = FastDepthV2().to(device)
-    checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/43/best_checkpoint.pth", map_location=device)
+    checkpoint = torch.load("/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/44/best_checkpoint.pth", map_location=device)
     model.load_state_dict(checkpoint["model"])
 
     example_input = torch.rand(1, 3, 196, 322).to(device)
@@ -403,7 +403,7 @@ def prune():
 
 
         torch.save(pruned_model, f"ours_checkpoints/46/pruned_model_full_{iter}.pth")
-        print("Saved full pruned model to ours_checkpoints/pruned_model_full.pth")
+        print(f"Saved full pruned model to ours_checkpoints/46/pruned_model_full_{iter}.pth")
 
 
 if __name__ == "__main__":
