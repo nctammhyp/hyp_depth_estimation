@@ -182,7 +182,7 @@ def eval_depth(pred, target):
 
 def train_fn(model, device = "cpu", load_state = False, state_path = './'):
     # params
-    num_epochs = 5
+    num_epochs = 1
     learning_rate=0.01
 
 
@@ -348,12 +348,19 @@ def train_fn(model, device = "cpu", load_state = False, state_path = './'):
 
         print(f"epoch_{epoch}, val_metrics={results}")        
 
-        # ===== Save Checkpoint =====
-        torch.save({
-            "model": model.state_dict(),
-            "optim": optim.state_dict()
-            # "scheduler": scheduler.state_dict()
-        }, f"{state_path}/prune_last_checkpoint_{epoch}.pth")
+        # lấy rmse làm metric chọn mô hình tốt nhất
+        current_val = results['rmse']
+
+        if current_val < best_val:
+            best_val = current_val
+            torch.save(model.state_dict(), f"{state_path}/best_model.pth")
+            print(f"✅ Saved new best model with RMSE = {current_val}")
+
+    # Load lại model tốt nhất
+    model.load_state_dict(torch.load(f"{state_path}/best_model.pth"))
+    print(f"🔄 Loaded best model (RMSE = {best_val}) to continue pruning.")
+    return model
+
 
 
 def prune():
@@ -379,7 +386,7 @@ def prune():
             ignored_layers.append(m)
 
     # iterative pruning
-    iterative_steps = 10
+    iterative_steps = 20
     pruner = tp.pruner.MagnitudePruner(
         model = pruned_model,
         example_inputs = example_input,
