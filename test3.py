@@ -29,8 +29,3 @@ model.load_state_dict(checkpoint["model"])
 model = model.to('cpu')
 
 print(model)
-
-# path = r"D:\ubuntu\test_algorithm\deep_learning\FastDepth_src\checkpoints_depth\best_checkpoint.pth"
-
-# with open(path, "rb") as f:
-#     print(f.read(20))

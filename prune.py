@@ -77,7 +77,7 @@ model.load_state_dict(checkpoint["model"])
 # model.load_state_dict(checkpoint)
 model = model.to(device)
 
-example_input = torch.rand(1, 3, 128, 160).to(device)
+example_input = torch.rand(1, 3, 196, 322).to(device)
 macs, parameters = tp.utils.count_ops_and_params(model, example_input)
 
 print(f"[full model] \t\tMACs: {macs/1e9:.2f} G, \tParameters: {parameters/1e6:.2f} M")
