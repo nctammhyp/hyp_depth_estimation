@@ -182,7 +182,7 @@ def eval_depth(pred, target):
 
 def train_fn(model, device = "cpu", load_state = False, state_path = './'):
     # params
-    num_epochs = 1
+    num_epochs = 5
     learning_rate=0.01
 
 
