@@ -182,7 +182,7 @@ def eval_depth(pred, target):
 
 def train_fn(model, device = "cpu", load_state = False, state_path = './'):
     # params
-    num_epochs = 1
+    num_epochs = 5
     learning_rate=0.01
 
 
@@ -401,7 +401,7 @@ def prune():
         # prune
         pruner.step()
         # fine-tune pruned model
-        train_fn(pruned_model, device = "cuda:0", load_state = False, state_path = 'ours_checkpoints')
+        train_fn(pruned_model, device = "cuda:0", load_state = False, state_path = 'ours_checkpoints/47')
         # count MACs and parameters
         macs, parameters = tp.utils.count_ops_and_params(pruned_model, example_input)
         latency_mu, latency_std = estimate_latency(pruned_model, example_input)
@@ -409,8 +409,8 @@ def prune():
         print(f"[pruned model] \tPruning ratio: {current_pruning_ratio:.2f}, \tMACs: {macs/1e9:.2f} G, \tParameters: {parameters/1e6:.2f} M, \tLatency: {latency_mu:.2f} ± {latency_std:.2f} ms")
 
 
-        torch.save(pruned_model, f"ours_checkpoints/46/pruned_model_full_{iter}.pth")
-        print(f"Saved full pruned model to ours_checkpoints/46/pruned_model_full_{iter}.pth")
+        torch.save(pruned_model, f"ours_checkpoints/47/pruned_model_full_{iter}.pth")
+        print(f"Saved full pruned model to ours_checkpoints/47/pruned_model_full_{iter}.pth")
 
 
 if __name__ == "__main__":
