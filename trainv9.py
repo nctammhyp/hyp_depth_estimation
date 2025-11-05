@@ -627,7 +627,6 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             "model": model.state_dict(),
             "optim": optim.state_dict(),
             "epoch": epoch
-
             # "scheduler": scheduler.state_dict()
         }, f"{state_path}/last_checkpoint.pth")
 
