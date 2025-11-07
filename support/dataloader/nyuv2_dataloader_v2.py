@@ -15,8 +15,8 @@ def h5_loader(path):
     h5f = h5py.File(path, "r")
     rgb = np.array(h5f["rgb"])
     rgb = np.transpose(rgb, (1, 2, 0))  # (H, W, C)
-    # depth = np.array(h5f["anythingv2l_322_196"])
-    depth = np.array(h5f['depth'])
+    depth = np.array(h5f["anythingv2l_322_196"])
+    # depth = np.array(h5f['depth'])
     h5f.close()
     return rgb, depth
 
@@ -111,8 +111,8 @@ def collate_fn(batch):
 
 def create_data_loaders(batch_size=[8, 8], subset=False):
     print("Creating dataset... patience.")
-    # base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
-    base_dir = r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\nyuv2_partial_406"
+    base_dir = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/nyu_v2"
+    # base_dir = r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\nyuv2_partial_406"
 
     train_path = os.path.join(base_dir, "train")
     val_path = os.path.join(base_dir, "val")
