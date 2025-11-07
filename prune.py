@@ -386,7 +386,7 @@ def prune():
             ignored_layers.append(m)
 
     # iterative pruning
-    iterative_steps = 20
+    iterative_steps = 10
     pruner = tp.pruner.MagnitudePruner(
         model = pruned_model,
         example_inputs = example_input,
@@ -401,7 +401,7 @@ def prune():
         # prune
         pruner.step()
         # fine-tune pruned model
-        train_fn(pruned_model, device = "cuda:0", load_state = False, state_path = 'ours_checkpoints/47')
+        train_fn(pruned_model, device = "cuda:0", load_state = False, state_path = 'ours_checkpoints/48')
         # count MACs and parameters
         macs, parameters = tp.utils.count_ops_and_params(pruned_model, example_input)
         latency_mu, latency_std = estimate_latency(pruned_model, example_input)
@@ -409,8 +409,8 @@ def prune():
         print(f"[pruned model] \tPruning ratio: {current_pruning_ratio:.2f}, \tMACs: {macs/1e9:.2f} G, \tParameters: {parameters/1e6:.2f} M, \tLatency: {latency_mu:.2f} ± {latency_std:.2f} ms")
 
 
-        torch.save(pruned_model, f"ours_checkpoints/47/pruned_model_full_{iter}.pth")
-        print(f"Saved full pruned model to ours_checkpoints/47/pruned_model_full_{iter}.pth")
+        torch.save(pruned_model, f"ours_checkpoints/48/pruned_model_full_{iter}.pth")
+        print(f"Saved full pruned model to ours_checkpoints/48/pruned_model_full_{iter}.pth")
 
 
 if __name__ == "__main__":

@@ -17,10 +17,12 @@ import matplotlib.pyplot as plt
 
 # import model for traning
 # from model_v4 import FastDepthV2, FastDepth, weights_init
-from depth_model.fdepth_resnet_v2 import FastDepthV2
+# from depth_model.fdepth_resnet_v2 import FastDepthV2
 # from depth_model.fdepth_resnet_v3 import FastDepthV2
 
 # from depth_model.depth_mobile import FastDepthV2, weights_init
+import bisenet
+
 
 import dataloader_v6
 from load_pretrained import load_pretrained_encoder, load_pretrained_fastdepth
@@ -344,8 +346,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
 
-    model = FastDepthV2()
+    # model = FastDepthV2()
     # model = FastDepthV2(training=True)
+    model = bisenet.BiSeNet()
 
 
     # model.encoder = load_pretrained_encoder(model.encoder,'Weights','mobilenetv2')
@@ -354,13 +357,13 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     
     model.to(device)
 
-    # optim = torch.optim.Adam(
-    #       model.parameters(),  # lấy toàn bộ parameter của model
-    #       lr=0.01,
-    #       weight_decay=0.01
-    #   )
+    optim = torch.optim.Adam(
+          model.parameters(),  # lấy toàn bộ parameter của model
+          lr=0.01,
+          weight_decay=0.01
+      )
 
-    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
     # optim = torch.optim.SGD
 
 
@@ -419,7 +422,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     # train_loader, val_loader = nyuv2_dataloader_v2.create_data_loaders()
     train_loader, val_loader = None, None
 
-    use_cross_dataset = True
+    use_cross_dataset = False
     if use_cross_dataset:
         # train_loader_v1, val_loader_v1 = dataloader_v6.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1", batch_size=16, size=(322, 196))
         # train_loader_v2 = hyp_dataloader_v3.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v3", batch_size=16, size=(322, 196))
@@ -510,10 +513,6 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
     # model = torch.compile(model)  
-    print("using freeze backbone")
-    for param in model.encoder.parameters():
-            param.requires_grad = False
-
 
     
 
@@ -535,14 +534,16 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             img, depth = input.to(device), target.to(device)
 
             optim.zero_grad()
-            pred = model(img)
+            # pred = model(img)
             # pred, disp1, disp2, disp3 = model(img)
+            pred, disp1, disp2 = model(img)
 
 
             # mask = (depth > 1e-3) 
             # mask = (depth > 1e-3) & torch.isfinite(depth)
 
             mask = (depth > 5) & (depth < 1000)
+            # mask = (depth > 0)
 
 
 
@@ -550,11 +551,13 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
             # print("target shape:", target.shape)
             # print("valid_mask shape:", mask.shape)
 
-            # loss1 = criterion(pred,depth,mask)
-            # loss2 = criterion(disp1,depth,mask)
-            # loss3 = criterion(disp2,depth,mask)
+            loss1 = criterion(pred,depth,mask)
+            loss2 = criterion(disp1,depth,mask)
+            loss3 = criterion(disp2,depth,mask)
             # loss4 = criterion(disp3,depth,mask)
 
+            loss = loss1 + loss2 + loss3
+            
             # loss = loss1 + loss2 + loss3 + loss4
 
             loss = criterion(pred,depth,mask)
@@ -599,6 +602,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
                 mask = (depth > 5) & (depth < 1000)
+                # mask = (depth > 0)
+
 
                 # mask = (depth > 1e-3) & torch.isfinite(depth)
 
@@ -651,9 +656,9 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 
             # inference cho best checkpoint
-            inference_sample(model, state_path, device, model_type="best")
+            # inference_sample(model, state_path, device, model_type="best")
 
-        inference_sample(model, state_path, device, model_type="last")
+        # inference_sample(model, state_path, device, model_type="last")
 
 
         # Cập nhật history
@@ -704,6 +709,5 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
-    train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/49")
-    # train_fn(device='cuda:0', load_state=False, state_path=r"D:\ubuntu\test_algorithm\deep_learning\FastDepth_src\ours_checkpoints\test")
-
+    # train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/test")
+    train_fn(device='cuda:0', load_state=False, state_path=r"D:\ubuntu\test_algorithm\deep_learning\FastDepth_src\ours_checkpoints\test")
