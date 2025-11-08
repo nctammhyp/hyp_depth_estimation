@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from layers import PatchTransformerEncoder, PixelWiseDotProduct
+from depth_model.layers import PatchTransformerEncoder, PixelWiseDotProduct
 
 
 class mViT(nn.Module):

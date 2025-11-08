@@ -8,13 +8,13 @@ import torch.nn.functional as F
 import torchvision.models
 import math,time
 
-import resnet18
-# from depth_model import resnet18
+# import resnet18
+from depth_model import resnet18
 
-# import depth_model.feature_fusion_module as ffm
+import depth_model.feature_fusion_module as ffm
 
-import feature_fusion_module as ffm
-from miniViT import mViT
+# import feature_fusion_module as ffm
+from depth_model.miniViT import mViT
 
 
 
