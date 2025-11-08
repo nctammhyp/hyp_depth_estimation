@@ -344,7 +344,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     print("CUDA available:", torch.cuda.is_available())
     print("CUDA device:", torch.cuda.current_device())
-    print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
+    # print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
 
