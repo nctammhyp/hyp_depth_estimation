@@ -335,8 +335,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     max_depth = 600
     # learning_rate=5e-6
     # learning_rate=0.0003412685
-    learning_rate=0.01
-    # learning_rate=0.005
+    # learning_rate=0.01
+    learning_rate=0.005
 
 
 
@@ -357,13 +357,13 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
     
     model.to(device)
 
-    # optim = torch.optim.Adam(
-    #       model.parameters(),  # lấy toàn bộ parameter của model
-    #       lr=0.01,
-    #       weight_decay=0.01
-    #   )
+    optim = torch.optim.Adam(
+          model.parameters(),  # lấy toàn bộ parameter của model
+          lr=0.01,
+          weight_decay=0.01
+      )
 
-    optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
+    # optim = torch.optim.SGD(model.parameters(), lr = learning_rate ,weight_decay=1e-4, momentum=0.9)
     # optim = torch.optim.SGD
 
 
@@ -407,12 +407,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # criterion = DepthLoss_custom()
 
-    # criterion = SiLogLoss() # author's loss
+    criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    criterion = L1Loss()
+    # criterion = L1Loss()
     # criterion = loss_v3.compute_depth_loss
     # criterion = loss_fn.L1NormLoss()
     # criterion = loss_fn.CompositeLoss()

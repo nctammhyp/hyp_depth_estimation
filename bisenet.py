@@ -194,6 +194,7 @@ class BiSeNet(nn.Module):
         bisenet_out = self.conv(bisenet_out)
 
         bisenet_out = F.interpolate(bisenet_out, size=x_input.size()[-2:], mode='bilinear')
+        bisenet_out = F.relu(bisenet_out)
 
         
         # When training model 
@@ -201,8 +202,13 @@ class BiSeNet(nn.Module):
             feature1_sup = self.supervision1(feature1)
             feature2_sup = self.supervision2(feature2)
             feature1_sup = F.interpolate(feature1_sup, size=x_input.size()[-2:], mode='bilinear')
-            feature2_sup = F.interpolate(feature2_sup, size=x_input.size()[-2:], mode='bilinear')        
+            feature2_sup = F.interpolate(feature2_sup, size=x_input.size()[-2:], mode='bilinear')     
+
+            feature1_sup = F.relu(feature1_sup)
+            feature2_sup = F.relu(feature2_sup)   
+
             return bisenet_out, feature1_sup, feature2_sup
+        
         return bisenet_out
 
 
