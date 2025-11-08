@@ -15,8 +15,8 @@ def h5_loader(path):
     h5f = h5py.File(path, "r")
     rgb = np.array(h5f["rgb"])
     rgb = np.transpose(rgb, (1, 2, 0))  # (H, W, C)
-    depth = np.array(h5f["anythingv2l_322_196"])
-    # depth = np.array(h5f['depth'])
+    # depth = np.array(h5f["anythingv2l_322_196"])
+    depth = np.array(h5f['depth'])
     h5f.close()
     return rgb, depth
 

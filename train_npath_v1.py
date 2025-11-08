@@ -407,12 +407,12 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     # criterion = DepthLoss_custom()
 
-    criterion = SiLogLoss() # author's loss
+    # criterion = SiLogLoss() # author's loss
     # criterion = CustomLoss()
     # criterion = SiLogL1Loss()
     # criterion = DepthLoss()
     # criterion = RelativeL1Loss()
-    # criterion = L1Loss()
+    criterion = L1Loss()
     # criterion = loss_v3.compute_depth_loss
     # criterion = loss_fn.L1NormLoss()
     # criterion = loss_fn.CompositeLoss()
