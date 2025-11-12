@@ -4,3 +4,4 @@ dataset_infor/*
 generate_pseudo_depth/*
 checkpoint_for_optimize/*
 predict_sample/*
+ours_checkpoints/local_*
