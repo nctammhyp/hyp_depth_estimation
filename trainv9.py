@@ -5,6 +5,8 @@ model: root
 """
 
 import os
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+
 import cv2
 import h5py
 import torch
@@ -185,6 +187,7 @@ def inference_sample(model, state_path, device, model_type="last"):
         # 2. Paths setup
         # =========================
         data_test = "/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_dataset_v1/test"
+        # data_test = r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\hypdataset_v1\test"
         
         save_test = "predict_sample"
         os.makedirs(save_test, exist_ok=True)
@@ -340,7 +343,7 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
     print("CUDA available:", torch.cuda.is_available())
     print("CUDA device:", torch.cuda.current_device())
-    print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
+    # print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
 
@@ -428,6 +431,8 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 
         # train_loader_v5 = outdoor_v1.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/hyp_outdoor_v1", batch_size=16, size=(322, 196))
         train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders("/home/gremsy_guest/hyp_workspace/depth_dataset/datasets/outdoor_2", batch_size=16, size=(322, 196))
+        # train_loader_v6, val_loader_v6 = outdoor_v2.create_data_loaders(r"D:\ubuntu\test_algorithm\deep_learning\hyp_dataset\hyp_outdoor_v2", batch_size=64, size=(322, 196))
+
 
 
         # print(f"train_loader_v1: {len(train_loader_v1.dataset)} samples ({len(train_loader_v1)} batches)")
@@ -705,5 +710,5 @@ def train_fn(device = "cuda:0", load_state = False, state_path = './'):
 if __name__ == "__main__":
     # train_fn(device='cuda:0', load_state=False, state_path="/kaggle/working/hyp_depth_estimation/ours_checkpoints/16")
     train_fn(device='cuda:0', load_state=False, state_path="/home/gremsy_guest/hyp_workspace/hyp_depth_estimation/ours_checkpoints/49")
-    # train_fn(device='cuda:0', load_state=False, state_path=r"D:\ubuntu\test_algorithm\deep_learning\FastDepth_src\ours_checkpoints\test")
+    # train_fn(device='cuda:0', load_state=False, state_path=r"D:\ubuntu\test_algorithm\deep_learning\FastDepth_src\ours_checkpoints\local_1")
 

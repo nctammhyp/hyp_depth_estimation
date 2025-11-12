@@ -1,3 +1,6 @@
 depth_anything_v2/checkpoint/*
 checkpoints_depth/*
 dataset_infor/*
+generate_pseudo_depth/*
+checkpoint_for_optimize/*
+predict_sample/*
